@@ -1,0 +1,132 @@
+#!/usr/bin/env node
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+'use strict'; /// Strict Syntax //////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+require('../Prototype/Array'); /// Array Prototypes //////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+require('../Prototype/String'); /// String Prototypes ////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+const $config = require('../Common/Configuration'); /// Configuration Settings ///////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+const $db = require('../Common/Database'); /// Datbase Connection ////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+const LibraryPublicSuffix = require('../Library/PublicSuffix'); /// PublicSuffix Module //////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+(async () => { /// Main Event Loop ///////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	// Try to process the database dump
+	try {
+		// Synchronize the models
+		await $db.connection().sync();
+		// Log the message
+		console.log('Synchronization Successful');
+		// Create the default system account
+		let $account = await $db.model('account').create($config.system.default.account);
+		// Log the account
+		console.log('Account Created:\t' + $account.id);
+		// Define our user
+		let $newUser = $config.system.default.user;
+		// Set the account ID
+		$newUser.accountId = $account.id;
+		// Create the default system user
+		let $user = await $db.model('user').create($newUser);
+		// Log the user
+		console.log('User Created:\t' + $user.id);
+		// Open the PublicSuffix Database
+		await LibraryPublicSuffix.openDatabase();
+		// Define our awaitables
+		let $awaitTld = [];
+		// Iterate over the database entries
+		LibraryPublicSuffix.database().each(($tld) => {
+			// Create the TLD
+			$awaitTld.push($db.model('dnsDomainTld').create({
+				'name': $tld
+			}));
+		});
+		// Await the TLD promises
+		await Promise.all($awaitTld);
+		// Log the message
+		console.log('Populated PublicSuffix Data');
+		// Define our domain awaitables
+		let $awaitDomain = [];
+		// Iterate over the domains
+		Object.keys($config.system.default.domain).each(($domainName) => {
+			// Add the promise to the awaitables
+			$awaitDomain.push(new Promise(($resolve, $reject) => {
+				// Add the domain to the database
+				$db.model('dnsDomain').create({
+					'name': $domainName,
+					'nameServer': [
+						'ns1.tux.systems',
+						'ns2.tux.systems'
+					],
+					'userId': $user.id
+				}).then(($domain) => {
+					// Log the message
+					console.log('Added Domain:\t' + $domainName);
+					// Define our record awaitables
+					let $awaitRecord = [];
+					// Iterate over the records
+					$config.system.default.domain[$domainName].record.each(async ($record) => {
+						// Set the domain ID into the record
+						$record.domainId = $domain.id;
+						// Set the user ID into the record
+						$record.userId = $user.id;
+						// Create the new record
+						$awaitRecord.push(new Promise(($resolveRecord, $rejectRecord) => {
+							// Create the record
+							$db.model('dnsRecord').create($record).then(() => {
+								// Log the message
+								console.log('Added Record:\t' + $record.host + '.' + $domainName + '(' + $record.type + ')');
+								// We're done, resolve the promise
+								$resolveRecord();
+							}).catch(($error) => {
+								// Log the message
+								// Log the message
+								console.log('Unable to Add Record:\t' + $record.host + '.' + $domainName + '(' + $record.type + ')');
+								// We're done, resolve the promise
+								$resolveRecord();
+							});
+						}));
+					});
+					// Await the record promises
+					Promise.all($awaitRecord).then(() => {
+						// We're done, resolve the promise
+						$resolve();
+					});
+				}).catch(($error) => {
+					// Log the message
+					console.log('Unable to Add Domain:\t' + $domainName);
+					// We're done, resolve the promise
+					$resolve();
+				});
+			}));
+		});
+		// Await the domain promises
+		await Promise.all($awaitDomain);
+		// We're done, kill the process
+		process.exit(0);
+	} catch ($error) {
+		// Log the error
+		console.error($error);
+		// We're done, kill the process
+		process.exit(1);
+	}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+})(); /// End Main Event Loop ////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
