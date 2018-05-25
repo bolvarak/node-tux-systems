@@ -148,13 +148,12 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 	 * @name LibraryPowerDNS._lookupDomainRecords()
 	 * @param {uuid} $domainId
 	 * @param {string} $domainName
-	 * @param {boolean, optional} $forTransfer [false]
 	 * @param {string, optional} $host [null]
 	 * @param {string, optional} $type ['ANY']
 	 * @returns {Promise.<void>}
 	 * @private
 	 */
-	async _lookupDomainRecords($domainId, $domainName, $forTransfer = false, $host = null, $type = 'ANY') {
+	async _lookupDomainRecords($domainId, $domainName, $host = null, $type = 'ANY') {
 		// Define our record clause
 		let $clause = {};
 		// Define the WHERE clause
@@ -170,19 +169,16 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 				[$db.Operator.eq]: $type.toUpperCase()
 			};
 		}
-		// Check the transfer flag
-		if (!$forTransfer) {
-			// Check the host name
-			if ($utility.lodash.isNull($host)) {
-				// Add the host to the clause
-				$clause.where.host = {
-					[$db.Operator.eq]: '@'
-				};
-			} else {
-				// Add the host to the clause
-				$clause.where.host = {
-					[$db.Operator.eq]: $host.toLowerCase(),
-				}
+		// Check the host name
+		if ($utility.lodash.isNull($host)) {
+			// Add the host to the clause
+			$clause.where.host = {
+				[$db.Operator.eq]: '@'
+			};
+		} else {
+			// Add the host to the clause
+			$clause.where.host = {
+				[$db.Operator.eq]: $host.toLowerCase(),
 			}
 		}
 		// Query for the record(s)
@@ -196,6 +192,50 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 			// Execute the query await
 			$records = await $db.model('dnsRecord').findAll($clause);
 		}
+		// Check for records
+		if (!$records || !$records.length) {
+			// Log the message
+			this.result().log($utility.util.format('Zone [%s] Has No Records', $domainName));
+			// We're done
+			return;
+		}
+		// Default the record ID list
+		this.query().recordId = [];
+		// Log the message
+		this.result().log($utility.util.format('Zone [%s] Has [%d] Records', $domainName, $records.length));
+		// Iterate over the records
+		$records.each(($record) => {
+			// Localize the host
+			let $recordHost = $record.host;
+			// Check the record host
+			if ($recordHost === '@') {
+				// Reset the host
+				$recordHost = $domainName;
+			} else {
+				// Reset the host
+				$recordHost.concat('.', $domainName);
+			}
+			// Reset the record host
+			$record.host = $recordHost;
+			// Add the record to the result
+			this.result().record($record);
+			// Set the record ID into the query
+			this.query().recordId.push($record.id.toString());
+		});
+	}
+
+
+	async _lookupDomainRecordsForTransfer($domainId, $domainName) {
+		// Define our record clause
+		let $clause = {};
+		// Define the WHERE clause
+		$clause.where = {};
+		// Set the active flag into the WHERE clause
+		$clause.where.isActive = {[$db.Operator.eq]: true};
+		// Set the domain ID into the WHERE clause
+		$clause.where.domainId = {[$db.Operator.eq]: $domainId};
+		// Query for the record(s)
+		let $records = await $db.model('dnsRecord').findAll($clause);
 		// Check for records
 		if (!$records || !$records.length) {
 			// Log the message
@@ -280,7 +320,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Add the SOA record
 		this.result().soa($domain.name, $domain.nameServer[0], $domain.serial, $domain.refresh, $domain.retry, $domain.expire, $domain.ttl);
 		// Process the records
-		await this._lookupDomainRecords($domain.id, $domain.name, true);
+		await this._lookupDomainRecordsForTransfer($domain.id, $domain.name);
 		// Define our finish
 		let $finish = new Date();
 		// Log the finish
@@ -325,7 +365,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 			this.result().soa($domain.name, $domain.nameServer[0], $domain.serial, $domain.refresh, $domain.retry, $domain.expire, $domain.ttl);
 		} else {
 			// Lookup the records for the domain
-			await this._lookupDomainRecords($domain.id, $domain.name, false, $hostName.host(), $parameters.qtype);
+			await this._lookupDomainRecords($domain.id, $domain.name, $hostName.host(), $parameters.qtype);
 		}
 		// Define our finish
 		let $finish = new Date();
