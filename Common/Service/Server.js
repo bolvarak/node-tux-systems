@@ -3,7 +3,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-const $config = require('./Configuration'); /// Configuration Settings ///////////////////////////////////////////////
+const $config = require('../Configuration'); /// Configuration Settings //////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15,11 +15,11 @@ const $http = require('http'); /// HTTP Module /////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-const $utility = require('../Common/Utility'); /// Utility Module ////////////////////////////////////////////////////
+const $utility = require('../Utility'); /// Utility Module ///////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-module.exports = class CommonServer { /// CommonServer Class Definition //////////////////////////////////////////////
+module.exports = class CommonServiceServer { /// CommonServiceServer Class Definition ////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,7 +28,7 @@ module.exports = class CommonServer { /// CommonServer Class Definition ////////
 
 	/**
 	 * This method instantiates a new Server listener
-	 * @name CommonServer.constructor()
+	 * @name CommonServiceServer.constructor()
 	 */
 	constructor() {
 
@@ -38,21 +38,21 @@ module.exports = class CommonServer { /// CommonServer Class Definition ////////
 
 		/**
 		 * This property contains the application instance
-		 * @name CommonServer.mApplication
+		 * @name CommonServiceServer.mApplication
 		 * @type {Express}
 		 */
 		this.mApplication = {};
 
 		/**
 		 * This property contains the HTTP server for the application
-		 * @name CommonServer.mHttpServer
+		 * @name CommonServiceServer.mHttpServer
 		 * @type {http.Server}
 		 */
 		this.mHttpServer = {};
 
 		/**
 		 * This property contains the port number that the application should listen on
-		 * @name CommonServer.mPort
+		 * @name CommonServiceServer.mPort
 		 * @type {number|string}
 		 */
 		this.mPort = (process.env.RSC_PORT || 8443);
@@ -65,7 +65,7 @@ module.exports = class CommonServer { /// CommonServer Class Definition ////////
 
 	/**
 	 * This method normalizes and validates the TCP port or UNIX socket path
-	 * @name CommonServer._normalizePort()
+	 * @name CommonServiceServer._normalizePort()
 	 * @param {number|string, optional} $value
 	 * @returns {number|string|boolean}
 	 * @private
@@ -93,7 +93,7 @@ module.exports = class CommonServer { /// CommonServer Class Definition ////////
 
 	/**
 	 * This method handles any errors that happen while starting and/or running the application server
-	 * @name CommonServer._error()
+	 * @name CommonServiceServer._error()
 	 * @param {Error} $error
 	 * @returns {void}
 	 * @throws {Error}
@@ -126,7 +126,7 @@ module.exports = class CommonServer { /// CommonServer Class Definition ////////
 
 	/**
 	 * This method handles the listening event for the application server
-	 * @name CommonServer._listening()
+	 * @name CommonServiceServer._listening()
 	 * @returns {void}
 	 * @private
 	 */
@@ -143,7 +143,7 @@ module.exports = class CommonServer { /// CommonServer Class Definition ////////
 
 	/**
 	 * This method initializes and dispatches the application HTTP server
-	 * @name CommonServer.run()
+	 * @name CommonServiceServer.run()
 	 * @returns {void}
 	 */
 	run() {
@@ -169,7 +169,7 @@ module.exports = class CommonServer { /// CommonServer Class Definition ////////
 
 	/**
 	 * This method returns the Express application from the instance with the ability to reset it inline
-	 * @name CommonServer.application()
+	 * @name CommonServiceServer.application()
 	 * @param {Express, optional}
 	 * @returns {Express}
 	 */
@@ -185,7 +185,7 @@ module.exports = class CommonServer { /// CommonServer Class Definition ////////
 
 	/**
 	 * This method returns the HTTP Server from the instance with the ability to reset it inline
-	 * @name CommonServer.httpServer()
+	 * @name CommonServiceServer.httpServer()
 	 * @param {http.Server, optional} $httpServer
 	 * @returns {http.Server}
 	 */
@@ -201,7 +201,7 @@ module.exports = class CommonServer { /// CommonServer Class Definition ////////
 
 	/**
 	 * This method returns the port from the instance with the ability to reset it inline
-	 * @name CommonServer.port()
+	 * @name CommonServiceServer.port()
 	 * @param {number|string, optional} $port
 	 * @returns {boolean|number|string}
 	 */
@@ -216,5 +216,5 @@ module.exports = class CommonServer { /// CommonServer Class Definition ////////
 	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-}; /// End CommonServer Class Definition //////////////////////////////////////////////////////////////////////////////
+}; /// End CommonServiceServer Class Definition ///////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
