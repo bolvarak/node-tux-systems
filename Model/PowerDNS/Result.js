@@ -3,6 +3,10 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+const $config = require('../../Common/Configuration'); /// Configuration Settings ////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 const $utility = require('../../Common/Utility'); /// Utility Module /////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -218,7 +222,6 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 	 * @name ModelPowerDNSResult.soa()
 	 * @param {string} $zone
 	 * @param {string} $nameServer
-	 * @param {string} $hostMaster
 	 * @param {number} $serial
 	 * @param {number} $refresh
 	 * @param {number} $retry
@@ -227,11 +230,9 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 	 * @returns {ModelPowerDNSResult}
 	 * @uses ModelPowerDNSResult.add()
 	 */
-	soa($zone, $nameServer, $hostMaster, $serial, $refresh, $retry, $expire, $ttl) {
+	soa($zone, $nameServer, $serial, $refresh, $retry, $expire, $ttl) {
 		// Modify the nameserver
 		$nameServer = $nameServer.replace(/\.+$/, '').trim().concat('.');
-		// Modify the hostmaster
-		$hostMaster = $hostMaster.replace(/\.+$/, '').replace(/@/, '.').trim().concat('.');
 		// Define our record object
 		let $record = {};
 		// Define the type
@@ -239,7 +240,7 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 		// Define the zone name
 		$record.qname = $zone;
 		// Define the content
-		$record.content = $utility.util.format('%s %s %d %d %d %d %d', $nameServer, $hostMaster, $serial, $refresh, $retry, $expire, $ttl);
+		$record.content = $utility.util.format('%s %s %d %d %d %d %d', $nameServer, $config.pdns.hostMaster, $serial, $refresh, $retry, $expire, $ttl);
 		// Define the TTL
 		$record.ttl = $ttl;
 		// Add the record to the result

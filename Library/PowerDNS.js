@@ -280,7 +280,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Set the user ID into the query
 		this.query().userId = $domain.userId;
 		// Add the SOA record
-		this.result().soa($domain.name, $domain.nameServer[0], $user.emailAddress, $domain.serial, $domain.refresh, $domain.retry, $domain.expire, $domain.ttl);
+		this.result().soa($domain.name, $domain.nameServer[0], $domain.serial, $domain.refresh, $domain.retry, $domain.expire, $domain.ttl);
 		// Process the records
 		await this._lookupDomainRecords($domain.id, $domain.name, true);
 		// Define our finish
@@ -326,7 +326,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Check for a SOA type
 		if ($parameters.qtype.toLowerCase() === 'soa') {
 			// Add the SOA record
-			this.result().soa($domain.name, $domain.nameServer[0], $user.emailAddress, $domain.serial, $domain.refresh, $domain.retry, $domain.expire, $domain.ttl);
+			this.result().soa($domain.name, $domain.nameServer[0], $domain.serial, $domain.refresh, $domain.retry, $domain.expire, $domain.ttl);
 		} else {
 			// Lookup the records for the domain
 			await this._lookupDomainRecords($domain.id, $domain.name, false, $hostName.host(), $parameters.qtype);
