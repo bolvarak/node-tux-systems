@@ -169,7 +169,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		if (($type.toLowerCase() !== 'any') && !$forTransfer) {
 			// Add the record type to the clause
 			$clause.where.type = {
-				[$db.Operator.eq]: $parameters.qtype.toUpperCase()
+				[$db.Operator.eq]: $type.toUpperCase()
 			};
 		}
 		// Check the transfer flag
