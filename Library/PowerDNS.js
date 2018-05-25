@@ -109,22 +109,258 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// Private Methods //////////////////////////////////////////////////////////////////////////////////////////////
+	/// Handler //////////////////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * This method initializes the backend, it does nothing since NodeJS doesn't need to be initialized, so we just bootstrap the response
+	 * @async
+	 * @name LibraryPowerDNS.initialize()
+	 * @param {Object.<string, any>} $parameters
+	 * @returns {Promise.<void>}
+	 * @uses LibraryPowerDNS.result()
+	 * @uses ModelPowerDNSResult.successful()
+	 * @uses ModelPowerDNSResult.log()
+	 */
+	async initialize($parameters) {
+		// Set the result flag
+		this.result().successful();
+		// Add the log message
+		this.result().log('Tux.Systems Initialized');
+	}
+
+	/**
+	 * This method performs an AXFR on a zone
+	 * @async
+	 * @name LibraryPowerDNS.list()
+	 * @param {Object.<string, any>} $parameters
+	 * @returns {Promise.<void>}
+	 * @uses LibraryPowerDNS.result()
+	 * @uses ModelPowerDNSResult.unsuccessful()
+	 * @uses ModelPowerDNSResult.log()
+	 * @uses ModelPowerDNSResult.record()
+	 */
+	async list($parameters) {
+		// Define our start
+		let $start = new Date();
+		// Log the start
+		this.result().log('Start:' + $start.getTime());
+		// Parse the hostname
+		let $hostName = await $publicSuffix.parse($parameters.zonename);
+		// Load the domain
+		let $domain = await $db.model('dnsDomain').findOne({
+			'include': ['user'],
+			'where': {
+				'isActive': {
+					[$db.Operator.eq]: true
+				},
+				'name': {
+					[$db.Operator.eq]: $hostName.domain().toLowerCase()
+				}
+			}
+		});
+		// Check for a domain
+		if ($utility.lodash.isNull($domain)) {
+			// Reset the result flag
+			this.result().unsuccessful();
+			// Log the message
+			this.result().log($utility.util.format('Zone [%s] Not Found', $hostName.domain()));
+			// We're done
+			return;
+		}
+		// Log the message
+		this.result().log($utility.util.format('Zone [%s] Matched', $hostName.domain()));
+		// Set the domain ID into the query
+		this.query().domainId = $domain.id;
+		// Set the user ID into the query
+		this.query().userId = $domain.userId;
+		// Add the SOA record
+		this.result().soa($domain.name, $domain.nameServer[0], $domain.user.emailAddress, $domain.serial, $domain.refresh, $domain.retry, $domain.expire, $domain.ttl);
+		// Query for the record(s)
+		let $records = await $db.model('dnsRecord').findAll({
+			'where': {
+				'isActive': {
+					[$db.Operator.eq]: true
+				},
+				'domainId': {
+					[$db.Operator.eq]: $domain.id
+				}
+			}
+		});
+		// Check for records
+		if (!$records && !$records.length) {
+			// Log the message
+			this.result().log($utility.util.format('Zone [%s] Has No Records', $hostName.domain()));
+			// We're done
+			return;
+		}
+		// Default the record ID list
+		this.query().recordId = [];
+		// Log the message
+		this.result().log($utility.util.format('Zone [%s] Has [%d] Records', $hostName.domain(), $records.length));
+		// Iterate over the records
+		$records.each(($record) => {
+			// Localize the host
+			let $host = $record.host;
+			// Check the record host
+			if ($host === '@') {
+				// Reset the host
+				$host = $domain.name;
+			} else {
+				// Reset the host
+				$host.concat('.', $domain.name);
+			}
+			// Reset the record host
+			$record.host = $host;
+			// Add the record to the result
+			this.result().record($record);
+			// Set the record ID into the query
+			this.query().recordId.push($record.id.toString());
+		});
+		// Define our finish
+		let $finish = new Date();
+		// Log the finish
+		this.result().log('Finish:' + $finish.getTime());
+		// Log the time taken
+		this.result().log('TimeTaken:' + ($finish.getTime() - $start.getTime()));
+		// We're done
+		return;
+	}
+
+	/**
+	 * This method performs a lookup on a record
+	 * @async
+	 * @name LibraryPowerDNS.lookup()
+	 * @param {Object.<string, any>} $parameters
+	 * @returns {Promise.<void>}
+	 * @uses LibraryPowerDNS.result()
+	 * @uses ModelPowerDNSResult.unsuccessful()
+	 * @uses ModelPowerDNSResult.log()
+	 * @uses ModelPowerDNSResult.record()
+	 */
+	async lookup($parameters) {
+		// Define our start
+		let $start = new Date();
+		// Log the start
+		this.result().log('Start:' + $start.getTime());
+		// Parse the hostname
+		let $hostName = await $publicSuffix.parse($parameters.qname);
+		// Load the domain
+		let $domain = await $db.model('dnsDomain').findOne({
+			'where': {
+				'isActive': {
+					[$db.Operator.eq]: true
+				},
+				'name': {
+					[$db.Operator.eq]: $hostName.domain().toLowerCase()
+				}
+			}
+		});
+		// Check for a domain
+		if ($utility.lodash.isNull($domain)) {
+			// Reset the result flag
+			this.result().unsuccessful();
+			// Log the message
+			this.result().log($utility.util.format('Zone [%s] Not Found', $hostName.domain()));
+			// We're done
+			return;
+		}
+		// Log the message
+		this.result().log($utility.util.format('Zone [%s] Matched', $hostName.domain()));
+		// Set the domain ID into the query
+		this.query().domainId = $domain.id;
+		// Set the user ID into the query
+		this.query().userId = $domain.userId;
+		// Define our record query clause
+		let $clause = {
+			'where': {
+				'isActive': {
+					[$db.Operator.eq]: true
+				},
+				'domainId': {
+					[$db.Operator.eq]: $domain.id
+				}
+			}
+		};
+		// Check the host name
+		if ($utility.lodash.isNull($hostName.host())) {
+			// Add the host to the clause
+			$clause.where.host = {
+				[$db.Operator.eq]: '@'
+			};
+		} else {
+			// Add the host to the clause
+			$clause.where.host = {
+				[$db.Operator.or]: [
+					{[$db.Operator.eq]: $hostName.host().toLowerCase()},
+					{[$db.Operator.eq]: '*'}
+				]
+			}
+		}
+		// Check the query type
+		if ($parameters.qtype.toLowerCase() !== 'any') {
+			// Add the record type to the clause
+			$clause.where.type = {
+				[$db.Operator.eq]: $parameters.qtype.toUpperCase()
+			};
+		}
+		// Query for the record(s)
+		let $records = await $db.model('dnsRecord').findAll($clause);
+		// Check for records
+		if (!$records && !$records.length) {
+			// Reset the result flag
+			this.result().unsuccessful();
+			// Log the message
+			this.result().log($utility.util.format('Host [%s] Not Found', ($utility.lodash.isNull($hostName.host()) ? $hostName.domain() : $utility.util.format('%s.%s', $hostName.host(), $hostName.domain()))));
+			// We're done
+			return;
+		}
+		// Default the record ID list
+		this.query().recordId = [];
+		// Log the message
+		this.result().log($utility.util.format('Found Record Match [%s]', ($utility.lodash.isNull($hostName.host()) ? $hostName.domain() : $utility.util.format('%s.%s', $hostName.host(), $hostName.domain()))));
+		// Iterate over the records
+		$records.each(($record) => {
+			// Localize the host
+			let $host = $record.host;
+			// Check the record host
+			if ($host === '@') {
+				// Reset the host
+				$host = $domain.name;
+			} else {
+				// Reset the host
+				$host.concat('.', $domain.name);
+			}
+			// Reset the record host
+			$record.host = $host;
+			// Add the record to the result
+			this.result().record($record);
+			// Set the record ID into the query
+			this.query().recordId.push($record.id.toString());
+		});
+		// Define our finish
+		let $finish = new Date();
+		// Log the finish
+		this.result().log('Finish:' + $finish.getTime());
+		// Log the time taken
+		this.result().log('TimeTaken:' + ($finish.getTime() - $start.getTime()));
+		// We're done
+		return;
+	}
 
 	/**
 	 * This method is a default response and is sent when a method is unsupported
 	 * @async
-	 * @name LibraryPowerDNS.__unsupported()
+	 * @name LibraryPowerDNS.unsupported()
 	 * @returns {Promise.<void>}
 	 * @private
 	 * @uses LibraryPowerDNS.query()
 	 * @uses LibraryPowerDNS.logger()
 	 * @uses LibraryPowerDNS.result()
 	 * @uses ModelPowerDNSResult.unsuccessful()
-	 * @uses ModelPowerDNSResult.logEntry()
+	 * @uses ModelPowerDNSResult.log()
 	 */
-	async __unsupported() {
+	async unsupported() {
 		// Define the message
 		let $message = $utility.util.format('Method [%s] Is Not Supported', this.query().request.method);
 		// Log the message
@@ -132,66 +368,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Set the result flag
 		this.result().unsuccessful();
 		// Add the log message
-		this.result().logEntry($message);
-	}
-
-	/**
-	 * This method initializes the backend, it does nothing since NodeJS doesn't need to be initialized, so we just bootstrap the response
-	 * @async
-	 * @name LibraryPowerDNS._initialize()
-	 * @param {Object.<string, any>} $parameters
-	 * @returns {Promise.<void>}
-	 * @private
-	 * @uses LibraryPowerDNS.result()
-	 * @uses ModelPowerDNSResult.successful()
-	 * @uses ModelPowerDNSResult.logEntry()
-	 */
-	async _initialize($parameters) {
-		// Set the result flag
-		this.result().successful();
-		// Add the log message
-		this.result().logEntry('Tux.Systems Initialized');
-	}
-
-	/**
-	 * This method performs a lookup on a record
-	 * @async
-	 * @name LibraryPowerDNS._lookup()
-	 * @param {Object.<string, any>} $parameters
-	 * @returns {Promise.<void>}
-	 * @private
-	 * @uses LibraryPowerDNS.result()
-	 * @uses ModelPowerDNSResult.unsuccessful()
-	 * @uses ModelPowerDNSResult.logEntry()
-	 * @uses ModelPowerDNSResult.recordEntry()
-	 */
-	async _lookup($parameters) {
-		// Define our start
-		let $start = new Date();
-		// Parse the hostname
-		let $hostName = await $publicSuffix.parse($parameters.qname);
-		// Define our finish
-		let $finish = new Date();
-		// Send the response
-		this.mResult = {
-			'hostName': $hostName.host(),
-			'domainName': $hostName.domain(),
-			'port': $hostName.port(),
-			'tld': $hostName.tld(),
-			'source': $hostName.source(),
-			'_timeTaken': ($finish.getTime() - $start.getTime())
-		};
-		// We're done
-		return;
-		// Check for a domain
-		if ($utility.lodash.isNull($domain)) {
-			// Reset the result flag and log message in the response
-			this.failure().log($utility.util.format('Domain [%s] Not Found', $hostName.domain()));
-			// We're done
-			return;
-		}
-		// Reset the result flag and log message in the response
-		this.failure().log($utility.util.format('Host [%s] Not Found', $hostName.host()));
+		this.result().log($message);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -209,34 +386,63 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 	 * @uses LibraryPowerDNS._initialize()
 	 * @uses LibraryPowerDNS._lookup()
 	 * @uses ModelPowerDNSResult.unsuccessful()
-	 * @uses ModelPowerDNSResult.logEntry()
+	 * @uses ModelPowerDNSResult.log()
 	 */
 	async response() {
 		// Try to process the query to elicit a response
 		try {
 			// Check for the method on the instance
-			if (!this.mMethods[this.query().request.method]) {
-				// Execute the unsupported method
-				await this.__unsupported(this.query().request.parameters);
-			} else {
-				// Execute the method
-				await this[this.mMethods[this.query().request.method]].apply(this, [this.query().request.parameters]);
+			switch(this.query().request.method.toLowerCase()) {
+				// initialize()
+				case 'initialize': await this.initialize(this.query().request.parameters); break;
+				// list()/axfr()
+				case 'list': await this.list(this.query().request.parameters); break;
+				// lookup()
+				case 'lookup': await this.lookup(this.query().request.parameters);break;
+				case 'aborttransaction':
+				case 'activatedomainkey':
+				case 'adddomainkey':
+				case 'calculatesoaserial':
+				case 'committransaction':
+				case 'createslavedomain':
+				case 'deactivatedomainkey':
+				case 'directbackendcmd':
+				case 'feedents':
+				case 'feedents3':
+				case 'feedrecord':
+				case 'getalldomainmetadata':
+				case 'getalldomains':
+				case 'getbeforeandafternamesabsolute':
+				case 'getdomaininfo':
+				case 'getdomainkeys':
+				case 'getdomainmetadata':
+				case 'gettsigkey':
+				case 'ismaster':
+				case 'removedomainkey':
+				case 'replacerrset':
+				case 'searchrecords':
+				case 'setdomainmetadata':
+				case 'setnotified':
+				case 'starttransaction':
+				case 'supermasterbackend':
+				// Unsupported
+				default: await this.unsupported(this.query().request.parameters); break;
 			}
 			// Set the response into the query model
-			this.query().response = this.result();
+			this.query().response = this.result().toObject();
 			// Try to save the response
 			try {
 				// Save the query model
 				await this.query().save();
 				// We're done, return the instance
-				return this;;
+				return this;
 			} catch ($error) {
 				// Log the error
 				this.logger().error($error);
 				// Set the result flag
 				this.result().unsuccessful();
 				// Add the log message
-				this.result().logEntry($error.message);
+				this.result().log($error.message);
 				// We're done, return the instance
 				return this;
 			}
@@ -247,7 +453,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 			// Set the result flag
 			this.result().unsuccessful();
 			// Add the log message
-			this.result().logEntry($error.message);
+			this.result().log($error.message);
 			// Set the response into the query model
 			this.query().response = this.result();
 			// Try to save the response
@@ -262,7 +468,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 				// Set the result flag
 				this.result().unsuccessful();
 				// Add the log message
-				this.result().logEntry($error.message);
+				this.result().log($error.message);
 				// We're done, return the instance
 				return this;
 			}
@@ -307,7 +513,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 	 */
 	result($result = undefined) {
 		// Check for a provided result
-		if ($result instanceof ModelPowerDNSResult) {
+		if ($result !== undefined) {
 			// Reset the result into the instance
 			this.mResult = $result;
 		}

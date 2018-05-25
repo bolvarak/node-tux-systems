@@ -85,9 +85,9 @@ module.exports = class ServicePowerDNS extends CommonServiceSocket { /// Service
 			// Set the result to failure
 			$powerDnsResult.unsuccessful();
 			// Add the error message
-			$powerDnsResult.logEntry($error.message);
+			$powerDnsResult.log($error.message);
 			// Add the forced disconnect message
-			$powerDnsResult.logEntry('Forced Disconnect');
+			$powerDnsResult.log('Forced Disconnect');
 			// Send the response
 			$stream.write($powerDnsResult.toJson() + '\n');
 			// Close the connection

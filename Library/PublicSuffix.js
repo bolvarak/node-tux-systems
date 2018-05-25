@@ -107,7 +107,7 @@ class LibraryPublicSuffix { /// LibraryPublicSuffix Class Definition ///////////
 		// Set the domain into the instance
 		this.domain(''.concat($parts[($parts.length - 1)], '.', $workingTld));
 		// Set the host name
-		this.host(''.concat($parts[($parts.length - 2)]));
+		this.host($parts[($parts.length - 2)] || null);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

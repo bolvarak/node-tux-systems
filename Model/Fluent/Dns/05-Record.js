@@ -160,14 +160,6 @@ module.exports = ($sequelize, $type) => { /// DNS Record Lookup Fluent Model Mod
 				'allowNull': true
 			}
 		});
-		// Associate the queries
-		$models.dnsRecord.hasMany($models.dnsQuery, {
-			'as': 'queryList',
-			'onDelete': 'CASCADE',
-			'foreignKey': {
-				'allowNull': true
-			}
-		});
 	};
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
