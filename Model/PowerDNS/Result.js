@@ -224,7 +224,7 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 		// Define the domain ID
 		$record.domain_id = $domainId;
 		// Define the content
-		$record.content = $content;
+		$record.content = $content.replace(/\.+$/, '').concat('.');
 		// Define the authority
 		$record.auth = $auth;
 		// Add the record to the result
