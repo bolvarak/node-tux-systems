@@ -81,6 +81,8 @@ module.exports = class ServicePowerDNS extends CommonServiceSocket { /// Service
 			// Write the result to the socket
 			$stream.write($libPowerDNS.result().toJson() + '\n');
 		} catch ($error) {
+			// Log the error
+			this.mLogger.error($error.message);
 			// Instantiate our result model
 			let $powerDnsResult = new ModelPowerDNSResult();
 			// Set the result to failure

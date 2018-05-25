@@ -450,7 +450,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 				return this;
 			} catch ($error) {
 				// Log the error
-				this.logger().error($error);
+				this.logger().error($error.message);
 				// Set the result flag
 				this.result().unsuccessful();
 				// Add the log message
@@ -461,7 +461,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 			// We're done
 		} catch ($error) {
 			// Log the error
-			this.logger().error($error);
+			this.logger().error($error.message);
 			// Set the result flag
 			this.result().unsuccessful();
 			// Add the log message
@@ -476,7 +476,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 				return this;
 			} catch($error) {
 				// Log the error
-				this.logger().error($error);
+				this.logger().error($error.message);
 				// Set the result flag
 				this.result().unsuccessful();
 				// Add the log message
