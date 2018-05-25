@@ -118,6 +118,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 	 * @name LibraryPowerDNS._lookupDomainAndUser()
 	 * @param {string} $domainName
 	 * @returns {Promise.<Array.<Sequelize.Model>>}
+	 * @throws {Error}
 	 * @private
 	 */
 	async _lookupDomainAndUser($domainName) {
@@ -132,6 +133,11 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 				}
 			}
 		});
+		// Check for a domain
+		if ($utility.lodash.isNull($domain)) {
+			// Throw the exception
+			throw new Error($utility.util.format('Zone [%s] Not Found', $hostName.domain()));
+		}
 		// Load the user for the domain
 		let $user = await $db.model('user').findById($domain.userId);
 		// We're done, return the domain and user
@@ -261,15 +267,6 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		let $hostName = await $publicSuffix.parse($parameters.zonename);
 		// Load the domain and user
 		let [$domain, $user] = await this._lookupDomainAndUser($hostName.domain());
-		// Check for a domain
-		if ($utility.lodash.isNull($domain)) {
-			// Reset the result flag
-			this.result().unsuccessful();
-			// Log the message
-			this.result().log($utility.util.format('Zone [%s] Not Found', $hostName.domain()));
-			// We're done
-			return;
-		}
 		// Log the message
 		this.result().log($utility.util.format('Zone [%s] Matched', $hostName.domain()));
 		// Set the domain ID into the query
@@ -314,15 +311,6 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		let $hostName = await $publicSuffix.parse($parameters.qname);
 		// Loojup the domain and user
 		let [$domain, $user] = await this._lookupDomainAndUser($hostName.domain());
-		// Check for a domain
-		if ($utility.lodash.isNull($domain)) {
-			// Reset the result flag
-			this.result().unsuccessful();
-			// Log the message
-			this.result().log($utility.util.format('Zone [%s] Not Found', $hostName.domain()));
-			// We're done
-			return;
-		}
 		// Log the message
 		this.result().log($utility.util.format('Zone [%s] Matched', $hostName.domain()));
 		// Set the domain ID into the query
