@@ -136,7 +136,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Check for a domain
 		if ($utility.lodash.isNull($domain)) {
 			// Throw the exception
-			throw new Error($utility.util.format('Zone [%s] Not Found', $hostName.domain()));
+			throw new Error($utility.util.format('Zone [%s] Not Found', $domainName));
 		}
 		// Load the user for the domain
 		let $user = await $db.model('user').findById($domain.userId);
