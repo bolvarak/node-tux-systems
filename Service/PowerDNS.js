@@ -70,6 +70,7 @@ module.exports = class ServicePowerDNS extends CommonServiceSocket { /// Service
 			this.mLogger.debug($utility.util.format('Client [%s] Payload\t%s', $clientId, JSON.stringify($payload)));
 			// Instantiate our model
 			let $queryModel = await $db.model('dnsQuery').create({
+				'clientId': $clientId,
 				'method': $payload.method,
 				'request': $payload
 			});

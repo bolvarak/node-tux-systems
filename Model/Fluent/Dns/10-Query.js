@@ -12,6 +12,11 @@ module.exports = ($sequelize, $type) => { /// DNS Query Lookup Fluent Model Modu
 
 	// Define our new model
 	const $dnsQueryModel = $sequelize.define('dnsQuery', {
+		'clientId': {
+			'allowNull': false,
+			'field': 'client_id',
+			'type': $type.UUID
+		},
 		'domainId': {
 			'allowNull': true,
 			'field': 'dns_domain_id',
@@ -91,6 +96,7 @@ module.exports = ($sequelize, $type) => { /// DNS Query Lookup Fluent Model Modu
 			}
 		},
 		'indexes': [
+			{'fields': ['client_id']},
 			{'fields': ['dns_domain_id']},
 			{'fields': ['method']},
 			{'fields': ['dns_record_id']},
