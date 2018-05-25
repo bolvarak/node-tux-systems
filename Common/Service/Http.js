@@ -1,10 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 'use strict'; /// Strict Syntax //////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-const $config = require('../Configuration'); /// Configuration Settings //////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 const $express = require('express'); /// Express Framework Module ////////////////////////////////////////////////////
@@ -19,7 +15,15 @@ const $utility = require('../Utility'); /// Utility Module /////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-module.exports = class CommonServiceServer { /// CommonServiceServer Class Definition ////////////////////////////////
+const CommonService = require('../Service'); /// CommonService Module ////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+const log4js = require('log4js'); /// Logging Module /////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+module.exports = class CommonServiceHttp extends CommonService { /// CommonServiceHttp Class Definition //////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,9 +32,42 @@ module.exports = class CommonServiceServer { /// CommonServiceServer Class Defin
 
 	/**
 	 * This method instantiates a new Server listener
-	 * @name CommonServiceServer.constructor()
+	 * @name CommonServiceHttp.constructor()
+	 * @param {number|string, optional} $port [8443]
+	 * @param {string, optional} $sysLogId ['tux-systems-http']
+	 * @param {striong, optional} $logLevel ['debug']
 	 */
-	constructor() {
+	constructor($port = 8443, $sysLogId = 'tux-systems-http', $logLevel = 'debug') {
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		super($sysLogId, $logLevel); /// Super Constructor ///////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		/// Logger Configuration /////////////////////////////////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		// Define our configuration structure
+		const $loggerConfig = {
+			'appenders': {},
+			'categories': {
+				'default': {
+					'appenders': [],
+					'level': $logLevel
+				}
+			}
+		};
+		// Add our appender to the configuration
+		$loggerConfig.appenders[$sysLogId] = {
+			'layout': {
+				'type': 'colored'
+			},
+			'type': 'stdout'
+		};
+		// Add our appender to the default category
+		$loggerConfig.categories.default.appenders.push($sysLogId);
+		// Configure the logger
+		log4js.configure($loggerConfig);
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		/// Properties ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,39 +75,50 @@ module.exports = class CommonServiceServer { /// CommonServiceServer Class Defin
 
 		/**
 		 * This property contains the application instance
-		 * @name CommonServiceServer.mApplication
+		 * @name CommonServiceHttp.mApplication
 		 * @type {Express}
 		 */
 		this.mApplication = {};
 
 		/**
 		 * This property contains the HTTP server for the application
-		 * @name CommonServiceServer.mHttpServer
+		 * @name CommonServiceHttp.mServer
 		 * @type {http.Server}
 		 */
-		this.mHttpServer = {};
+		this.mServer = {};
 
 		/**
 		 * This property contains the port number that the application should listen on
-		 * @name CommonServiceServer.mPort
+		 * @name CommonServiceHttp.mPort
 		 * @type {number|string}
 		 */
-		this.mPort = (process.env.RSC_PORT || 8443);
+		this.mPort = $port;
 
-	} /// End Constructor /////////////////////////////////////////////////////////////////////////////////////////////
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		/// Construction /////////////////////////////////////////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		// Attach to the SIGIN signal
+		process.on('SIGINT', async () => {
+			// Cleanup the connections and shut the server down
+			await this.stop();
+		});
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// Private Methods //////////////////////////////////////////////////////////////////////////////////////////////
+	} /// End Constructor ////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Normalization Methods ////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
 	 * This method normalizes and validates the TCP port or UNIX socket path
-	 * @name CommonServiceServer._normalizePort()
+	 * @name CommonServiceHttp.normalizePort()
 	 * @param {number|string, optional} $value
 	 * @returns {number|string|boolean}
-	 * @private
 	 */
-	_normalizePort($value) {
+	normalizePort($value) {
 		// Parse the port as a number
 		let $port = parseInt($value, 10);
 		// Check for a number
@@ -93,13 +141,12 @@ module.exports = class CommonServiceServer { /// CommonServiceServer Class Defin
 
 	/**
 	 * This method handles any errors that happen while starting and/or running the application server
-	 * @name CommonServiceServer._error()
+	 * @name CommonServiceHttp.error()
 	 * @param {Error} $error
 	 * @returns {void}
 	 * @throws {Error}
-	 * @private
 	 */
-	_error($error) {
+	error($error) {
 		// Check to see if the server is spawning
 		if ($error.syscall !== 'listening') {
 			// We're done, throw the error
@@ -110,12 +157,12 @@ module.exports = class CommonServiceServer { /// CommonServiceServer Class Defin
 		// Check the error code
 		if ($error.code.toLowerCase() === 'eaccess') {
 			// Send the error to the console
-			console.error(('Pre-Flight:'), ('Permission Denied On ' + $binding + '!'));
+			this.logger().error('Pre-Flight:\tPermission Denied On ' + $binding + '!');
 			// We're done, kill the application
 			process.exit(1);
 		} else if ($error.code.toLowerCase() === 'eaddrinuse') {
 			// Send the error to the console
-			console.error(('Pre-Flight:'), ($binding + 'Already In Use!'));
+			this.logger().error('Pre-Flight:\t' + $binding + ' Already In Use!');
 			// We're done, kill the application
 			process.exit(1);
 		} else {
@@ -126,41 +173,57 @@ module.exports = class CommonServiceServer { /// CommonServiceServer Class Defin
 
 	/**
 	 * This method handles the listening event for the application server
-	 * @name CommonServiceServer._listening()
+	 * @name CommonServiceHttp.listening()
 	 * @returns {void}
 	 * @private
 	 */
-	_listening() {
+	listening() {
 		// Define our binding
 		let $binding = ((typeof this.httpServer().address() === 'string') ? ('UNIX:[' + this.httpServer().address() + ']') : ('TCP:[' + this.httpServer().address().port + ']'));
 		// Output to debug
-		console.log('Pre-Flight Listening:', $binding);
+		this.logger().info('Pre-Flight:\tListening on ' + $binding);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// Public Methods ///////////////////////////////////////////////////////////////////////////////////////////////
+	/// Implementations //////////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
 	 * This method initializes and dispatches the application HTTP server
-	 * @name CommonServiceServer.run()
-	 * @returns {void}
+	 * @async
+	 * @name CommonServiceHttp.start()
+	 * @returns {Promise.<void>}
+	 * @uses CommonServiceHttp.application()
+	 * @uses CommonServiceHttp.server()
 	 */
-	run() {
+	async start() {
 		// Set the port into the application
 		this.application().set('port', this.port());
 		// Create our server
-		this.httpServer($http.createServer(this.application()));
+		this.server($http.createServer(this.application()));
 		// Dispatch the server
-		this.httpServer().listen(this.port());
+		this.server().listen(this.port());
 		// Bind to the error event
-		this.httpServer().on('error', ($error) => {
-			return this._error($error);
+		this.server().on('error', ($error) => {
+			// Return the event handler
+			return this.error($error);
 		});
 		// Bind to the listening event
-		this.httpServer().on('listening', () => {
-			return this._listening();
+		this.server().on('listening', () => {
+			// Return the event handler
+			return this.listening();
 		});
+	}
+
+	/**
+	 * This method stops the listening server
+	 * @async
+	 * @name CommonServiceHttp.stop()
+	 * @returns {Promise.<void>}
+	 */
+	async stop() {
+		// Stop the service
+		this.server().close();
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -169,7 +232,7 @@ module.exports = class CommonServiceServer { /// CommonServiceServer Class Defin
 
 	/**
 	 * This method returns the Express application from the instance with the ability to reset it inline
-	 * @name CommonServiceServer.application()
+	 * @name CommonServiceHttp.application()
 	 * @param {Express, optional}
 	 * @returns {Express}
 	 */
@@ -184,24 +247,8 @@ module.exports = class CommonServiceServer { /// CommonServiceServer Class Defin
 	}
 
 	/**
-	 * This method returns the HTTP Server from the instance with the ability to reset it inline
-	 * @name CommonServiceServer.httpServer()
-	 * @param {http.Server, optional} $httpServer
-	 * @returns {http.Server}
-	 */
-	httpServer($httpServer) {
-		// Check for a provided HTTP Server
-		if ($httpServer instanceof $http.Server) {
-			// Reset the HTTP Server into the instance
-			this.mHttpServer = $httpServer
-		}
-		// We're done, return the HTTP Server from the instance
-		return this.mHttpServer;
-	}
-
-	/**
 	 * This method returns the port from the instance with the ability to reset it inline
-	 * @name CommonServiceServer.port()
+	 * @name CommonServiceHttp.port()
 	 * @param {number|string, optional} $port
 	 * @returns {boolean|number|string}
 	 */
@@ -215,6 +262,22 @@ module.exports = class CommonServiceServer { /// CommonServiceServer Class Defin
 		return this.mPort;
 	}
 
+	/**
+	 * This method returns the HTTP Server from the instance with the ability to reset it inline
+	 * @name CommonServiceHttp.server()
+	 * @param {http.Server, optional} $httpServer
+	 * @returns {http.Server}
+	 */
+	server($httpServer) {
+		// Check for a provided HTTP Server
+		if ($httpServer instanceof $http.Server) {
+			// Reset the HTTP Server into the instance
+			this.mHttpServer = $httpServer
+		}
+		// We're done, return the HTTP Server from the instance
+		return this.mHttpServer;
+	}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-}; /// End CommonServiceServer Class Definition ///////////////////////////////////////////////////////////////////////
+}; /// End CommonServiceHttp Class Definition /////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

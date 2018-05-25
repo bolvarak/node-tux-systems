@@ -45,7 +45,10 @@ module.exports = class ServicePowerDNS extends CommonServiceSocket { /// Service
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		super($config.pdns.socket, $config.pdns.log.id, $config.pdns.log.level); /// Super Constructor ///////////////
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	} /// End Constructor ////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// Implementations //////////////////////////////////////////////////////////////////////////////////////////////
@@ -60,6 +63,7 @@ module.exports = class ServicePowerDNS extends CommonServiceSocket { /// Service
 	 * @param {Socket} $stream
 	 * @param {Buffer} $payload
 	 * @returns {Promise<void>}
+	 * @uses CommonService.logger()
 	 */
 	async clientRequest($clientId, $stream, $payload) {
 		// Try to process the request
@@ -67,7 +71,7 @@ module.exports = class ServicePowerDNS extends CommonServiceSocket { /// Service
 			// Parse the payload
 			$payload = JSON.parse($payload.toString());
 			// Log the payload
-			this.mLogger.debug($utility.util.format('Client [%s] Payload\t%s', $clientId, JSON.stringify($payload)));
+			this.logger().debug($utility.util.format('Client [%s] Payload\t%s', $clientId, JSON.stringify($payload)));
 			// Instantiate our model
 			let $queryModel = await $db.model('dnsQuery').create({
 				'clientId': $clientId,
@@ -75,14 +79,14 @@ module.exports = class ServicePowerDNS extends CommonServiceSocket { /// Service
 				'request': $payload
 			});
 			// Instantiate the library
-			let $libPowerDNS = new LibraryPowerDNS($queryModel, this.mLogger);
+			let $libPowerDNS = new LibraryPowerDNS($queryModel, this.logger());
 			// Await the response
 			await $libPowerDNS.response();
 			// Write the result to the socket
 			$stream.write($libPowerDNS.result().toJson() + '\n');
 		} catch ($error) {
 			// Log the error
-			this.mLogger.error($error.message);
+			this.logger().error($error.message);
 			// Instantiate our result model
 			let $powerDnsResult = new ModelPowerDNSResult();
 			// Set the result to failure

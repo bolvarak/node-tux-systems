@@ -183,15 +183,21 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 			} else {
 				// Add the host to the clause
 				$clause.where.host = {
-					[$db.Operator.or]: [
-						{[$db.Operator.eq]: $host.toLowerCase()},
-						{[$db.Operator.eq]: '*'}
-					]
+					[$db.Operator.eq]: $host.toLowerCase(),
 				}
 			}
 		}
 		// Query for the record(s)
 		let $records = await $db.model('dnsRecord').findAll($clause);
+		// Check for records
+		if (!$records && !$records.length && !$forTransfer) {
+			// Update the host name
+			$clause.where.host = {
+				[$db.Operator.eq]: '*'
+			}
+			// Execute the query await
+			$records = await $db.model('dnsRecord').findAll($clause);
+		}
 		// Check for records
 		if (!$records && !$records.length) {
 			// Log the message

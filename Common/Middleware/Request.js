@@ -7,7 +7,7 @@ const $lodash = require('lodash'); /// The Lodash Utility Module ///////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-const $config = require('../Common/Configuration'); /// Configuration Module /////////////////////////////////////////
+const $config = require('../Configuration'); /// Configuration Module ////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -69,7 +69,6 @@ module.exports = ($httpRequest, $httpResponse, $nextCall) => { /// Request Modul
 		let $booleans = [
 			'0', '1',
 			'true', 'false',
-//			'yes', 'no',
 			'y', 'n',
 			'on', 'off'
 		];
@@ -77,7 +76,6 @@ module.exports = ($httpRequest, $httpResponse, $nextCall) => { /// Request Modul
 		let $truth = [
 			'1',
 			'true',
-//			'yes',
 			'y',
 			'on'
 		];
@@ -89,11 +87,6 @@ module.exports = ($httpRequest, $httpResponse, $nextCall) => { /// Request Modul
 			if ($json !== false) {
 				// We're done, process the array
 				return processValue($json);
-/**
-			} else if ($scalar.isXml()) {
-				// We're done, process the XML
-				return processXml($scalar);
- */
 			} else if ($booleans.has($scalar.toLowerCase())) {
 				// We're done, reset and return the value
 				return ($truth.has($scalar.toLowerCase()) ? true : false);

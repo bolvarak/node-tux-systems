@@ -15,10 +15,6 @@ const $net = require('net'); /// Network Module ////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-const log4js = require('log4js'); /// Logging Module /////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 const CommonService = require('../Service'); /// Service Module //////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -34,40 +30,14 @@ module.exports = class CommonServiceSocket extends CommonService { /// CommonSer
 	 * This method instantiates a new Socket
 	 * @name CommonServiceSocket.constructor()
 	 * @param {string} $socketPath
-	 * @param {string} $sysLogId
-	 * @param {string} $logLevel
+	 * @param {string, optional} $sysLogId ['tux-systems-socket']
+	 * @param {string, optional} $logLevel ['debug']
 	 */
 	constructor($socketPath, $sysLogId = 'tux-systems-socket', $logLevel = 'debug') {
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		super(); /// Super Constructor ///////////////////////////////////////////////////////////////////////////////
+		super($sysLogId, $logLevel); /// Super Constructor ///////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/// Logger Configuration /////////////////////////////////////////////////////////////////////////////////////
-		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		// Define our configuration structure
-		const $loggerConfig = {
-			'appenders': {},
-			'categories': {
-				'default': {
-					'appenders': [],
-					'level': $logLevel
-				}
-			}
-		};
-		// Add our appender to the configuration
-		$loggerConfig.appenders[$sysLogId] = {
-			'layout': {
-				'type': 'colored'
-			},
-			'type': 'stdout'
-		};
-		// Add our appender to the default category
-		$loggerConfig.categories.default.appenders.push($sysLogId);
-		// Configure the logger
-		log4js.configure($loggerConfig);
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		/// Properties ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -79,13 +49,6 @@ module.exports = class CommonServiceSocket extends CommonService { /// CommonSer
 		 * @type {Object.<string, Socket>}
 		 */
 		this.mClients = {};
-
-		/**
-		 * This property contains the instance of our logger
-		 * @name CommonServiceSocket.mLogger
-		 * @type {Logger}
-		 */
-		this.mLogger = log4js.getLogger($sysLogId);
 
 		/**
 		 * This property contains the listening server
@@ -117,7 +80,10 @@ module.exports = class CommonServiceSocket extends CommonService { /// CommonSer
 			// Cleanup the connections and shut the server down
 			await this.cleanUp();
 		});
-	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	} /// End Constructor ////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// Abstract Methods /////////////////////////////////////////////////////////////////////////////////////////////
@@ -184,6 +150,7 @@ module.exports = class CommonServiceSocket extends CommonService { /// CommonSer
 	 * @async
 	 * @name CommonServiceSocket.cleanUp()
 	 * @returns {Promise<void>}
+	 * @uses CommonService.logger()
 	 * @uses CommonServiceSocket.clientForceDisconnect()
 	 * @uses CommonServiceSocket.stop()
 	 */
@@ -193,7 +160,7 @@ module.exports = class CommonServiceSocket extends CommonService { /// CommonSer
 			// Reset the shutdown flag
 			this.mShutdown = true;
 			// Log the message
-			this.mLogger.info('Cleaning Up Clients');
+			this.logger().info('Cleaning Up Clients');
 			// Localize the client IDs
 			let $clientList = Object.keys(this.mClients);
 			// Iterate over the client IDs
@@ -203,7 +170,7 @@ module.exports = class CommonServiceSocket extends CommonService { /// CommonSer
 				// Emit the event
 				await this.clientForceDisconnect($clientId, this.mClients[$clientId]);
 				// Log the message
-				this.mLogger.info($utility.util.format('Forcing Client [%s] Disconnect', $clientId));
+				this.logger().info($utility.util.format('Forcing Client [%s] Disconnect', $clientId));
 				// Close the client
 				this.mClients[$clientId].end();
 			}
@@ -218,6 +185,7 @@ module.exports = class CommonServiceSocket extends CommonService { /// CommonSer
 	 * @name CommonServiceSocket.clientSetup()
 	 * @param {Socket} $stream
 	 * @returns {Promise<void>}
+	 * @uses CommonService.logger()
 	 * @uses CommonServiceSocket.clientDisconnect()
 	 * @uses CommonServiceSocket.clientRequest()
 	 */
@@ -225,7 +193,7 @@ module.exports = class CommonServiceSocket extends CommonService { /// CommonSer
 		// Define the client ID
 		let $clientId = $utility.uuid();
 		// Log the message
-		this.mLogger.info($utility.util.format('Client [%s] Locked', $clientId));
+		this.logger().info($utility.util.format('Client [%s] Locked', $clientId));
 		// Set the client into the pool
 		this.mClients[$clientId] = ($stream);
 		// Bind to the disconnect event
@@ -233,7 +201,7 @@ module.exports = class CommonServiceSocket extends CommonService { /// CommonSer
 			// Process the client disconnect
 			await this.clientDisconnect($clientId, $stream);
 			// Log the message
-			this.mLogger.info($utility.util.format('Client [%s] Disconnected', $clientId));
+			this.logger().info($utility.util.format('Client [%s] Disconnected', $clientId));
 			// Purge the client from the pool
 			delete this.mClients[$clientId];
 		});
@@ -257,7 +225,7 @@ module.exports = class CommonServiceSocket extends CommonService { /// CommonSer
 			}
 		});
 		// Log the message
-		this.mLogger.info($utility.util.format('Client [%s] Loaded', $clientId));
+		this.logger().info($utility.util.format('Client [%s] Loaded', $clientId));
 	}
 
 	/**
@@ -265,34 +233,35 @@ module.exports = class CommonServiceSocket extends CommonService { /// CommonSer
 	 * @async
 	 * @name CommonServiceSocket.preFlight()
 	 * @returns {Promise<void>}
+	 * @uses CommonService.logger()
 	 */
 	async preFlight() {
 		// Log the message
-		this.mLogger.info('Running Pre-Flight Checks');
+		this.logger().info('Running Pre-Flight Checks');
 		// Try to stat the socket file
 		try {
 			// Stat the socket file
 			let $stats = await $utility.fsStat(this.mSocket);
 			// Log the message
-			this.mLogger.info('Socket Artifact Found');
+			this.logger().info('Socket Artifact Found');
 			// Try to purge the socket file
 			try {
 				// Log the message
-				this.mLogger.info('Purging Socket Artifact');
+				this.logger().info('Purging Socket Artifact');
 				// Purge the socket file
 				await $utility.fsDeleteFile(this.mSocket);
 			} catch ($error) {
 				// Log the error
-				this.mLogger.error($error);
+				this.logger().error($error);
 				// We're done, kill the process
 				process.exit(1);
 			}
 		} catch ($error) {
 			// Log the message
-			this.mLogger.info('Socket Artifact Not Found');
+			this.logger().info('Socket Artifact Not Found');
 		}
 		// Log the message
-		this.mLogger.info('Pre-Flight Checks Finished');
+		this.logger().info('Pre-Flight Checks Finished');
 	}
 
 	/**
@@ -300,6 +269,7 @@ module.exports = class CommonServiceSocket extends CommonService { /// CommonSer
 	 * @async
 	 * @name CommonServiceSocket.start()
 	 * @returns {Promise<void>}
+	 * @uses CommonService.logger()
 	 * @uses CommonServiceSocket.preFlight()
 	 * @uses CommonServiceSocket.clientSetup()
 	 * @uses CommonServiceSocket.clientConnect()
@@ -315,14 +285,14 @@ module.exports = class CommonServiceSocket extends CommonService { /// CommonSer
 				await this.clientSetup($stream);
 			});
 			// Log the message
-			this.mLogger.info('Starting Server');
+			this.logger().info('Starting Server');
 			// Start the server
 			this.mServer.listen(this.mSocket);
 			// Attach to the connection event
 			this.mServer.on('connection', this.clientConnect);
 		} catch ($error) {
 			// Log the error
-			this.mLogger.error($error);
+			this.logger().error($error);
 			// We're done, kill the process
 			process.exit(1);
 		}
@@ -333,10 +303,11 @@ module.exports = class CommonServiceSocket extends CommonService { /// CommonSer
 	 * @async
 	 * @name CommonServiceSocket.shutdownServer()
 	 * @returns {Promise<void>}
+	 * @uses CommonService.logger()
 	 */
 	async stop() {
 		// Log the message
-		this.mLogger.info('Stopping Server');
+		this.logger().info('Stopping Server');
 		// Close the server
 		this.mServer.close();
 		// We're done, kill the process
