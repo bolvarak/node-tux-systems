@@ -62,8 +62,6 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 		$record.qname = $name;
 		// Define the TTL
 		$record.ttl = $ttl;
-		// Define the domain ID
-		$record.domain_id = $domainId;
 		// Define the content
 		$record.content = $content;
 		// Define the authority
