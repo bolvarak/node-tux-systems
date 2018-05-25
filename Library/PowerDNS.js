@@ -149,7 +149,6 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		let $hostName = await $publicSuffix.parse($parameters.zonename);
 		// Load the domain
 		let $domain = await $db.model('dnsDomain').findOne({
-			'include': ['user'],
 			'where': {
 				'isActive': {
 					[$db.Operator.eq]: true
@@ -159,6 +158,8 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 				}
 			}
 		});
+		// Load the user for the domain
+		let $user = await $db.model('user').findById($domain.userId);
 		// Check for a domain
 		if ($utility.lodash.isNull($domain)) {
 			// Reset the result flag
@@ -175,7 +176,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Set the user ID into the query
 		this.query().userId = $domain.userId;
 		// Add the SOA record
-		this.result().soa($domain.name, $domain.nameServer[0], $domain.user.emailAddress, $domain.serial, $domain.refresh, $domain.retry, $domain.expire, $domain.ttl);
+		this.result().soa($domain.name, $domain.nameServer[0], $user.emailAddress, $domain.serial, $domain.refresh, $domain.retry, $domain.expire, $domain.ttl);
 		// Query for the record(s)
 		let $records = await $db.model('dnsRecord').findAll({
 			'where': {
@@ -258,6 +259,8 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 				}
 			}
 		});
+		// Load the user for the domain
+		let $user = await $db.model('user').findById($domain.userId);
 		// Check for a domain
 		if ($utility.lodash.isNull($domain)) {
 			// Reset the result flag
@@ -276,7 +279,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Check for a SOA type
 		if ($parameters.qtype.toLowerCase() === 'soa') {
 			// Add the SOA record
-			this.result().soa($domain.name, $domain.nameServer[0], $domain.user.emailAddress, $domain.serial, $domain.refresh, $domain.retry, $domain.expire, $domain.ttl);
+			this.result().soa($domain.name, $domain.nameServer[0], $user.emailAddress, $domain.serial, $domain.refresh, $domain.retry, $domain.expire, $domain.ttl);
 			// Reset the skip records flag
 			$skipRecords = true;
 		}
