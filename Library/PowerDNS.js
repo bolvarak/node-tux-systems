@@ -239,6 +239,8 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 	 * @uses ModelPowerDNSResult.record()
 	 */
 	async lookup($parameters) {
+		// Define our skip records flag
+		let $skipRecords = false;
 		// Define our start
 		let $start = new Date();
 		// Log the start
@@ -271,73 +273,83 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		this.query().domainId = $domain.id;
 		// Set the user ID into the query
 		this.query().userId = $domain.userId;
-		// Define our record query clause
-		let $clause = {
-			'where': {
-				'isActive': {
-					[$db.Operator.eq]: true
-				},
-				'domainId': {
-					[$db.Operator.eq]: $domain.id
+		// Check for a SOA type
+		if ($parameters.qtype.toLowerCase() === 'soa') {
+			// Add the SOA record
+			this.result().soa($domain.name, $domain.nameServer[0], $domain.user.emailAddress, $domain.serial, $domain.refresh, $domain.retry, $domain.expire, $domain.ttl);
+			// Reset the skip records flag
+			$skipRecords = true;
+		}
+		// Check the skip records flag
+		if (!$skipRecords) {
+			// Define our record query clause
+			let $clause = {
+				'where': {
+					'isActive': {
+						[$db.Operator.eq]: true
+					},
+					'domainId': {
+						[$db.Operator.eq]: $domain.id
+					}
+				}
+			};
+			// Check the host name
+			if ($utility.lodash.isNull($hostName.host())) {
+				// Add the host to the clause
+				$clause.where.host = {
+					[$db.Operator.eq]: '@'
+				};
+			} else {
+				// Add the host to the clause
+				$clause.where.host = {
+					[$db.Operator.or]: [
+						{[$db.Operator.eq]: $hostName.host().toLowerCase()},
+						{[$db.Operator.eq]: '*'}
+					]
 				}
 			}
-		};
-		// Check the host name
-		if ($utility.lodash.isNull($hostName.host())) {
-			// Add the host to the clause
-			$clause.where.host = {
-				[$db.Operator.eq]: '@'
-			};
-		} else {
-			// Add the host to the clause
-			$clause.where.host = {
-				[$db.Operator.or]: [
-					{[$db.Operator.eq]: $hostName.host().toLowerCase()},
-					{[$db.Operator.eq]: '*'}
-				]
+			// Check the query type
+			if ($parameters.qtype.toLowerCase() !== 'any') {
+				// Add the record type to the clause
+				$clause.where.type = {
+					[$db.Operator.eq]: $parameters.qtype.toUpperCase()
+				};
 			}
-		}
-		// Check the query type
-		if ($parameters.qtype.toLowerCase() !== 'any') {
-			// Add the record type to the clause
-			$clause.where.type = {
-				[$db.Operator.eq]: $parameters.qtype.toUpperCase()
-			};
-		}
-		// Query for the record(s)
-		let $records = await $db.model('dnsRecord').findAll($clause);
-		// Check for records
-		if (!$records && !$records.length) {
-			// Reset the result flag
-			this.result().unsuccessful();
+			// Query for the record(s)
+			let $records = await $db.model('dnsRecord').findAll($clause);
+			// Check for records
+			if (!$records && !$records.length) {
+				// Reset the result flag
+				this.result().unsuccessful();
+				// Log the message
+				this.result().log($utility.util.format('Host [%s] Not Found', ($utility.lodash.isNull($hostName.host()) ? $hostName.domain() : $utility.util.format('%s.%s', $hostName.host(), $hostName.domain()))));
+				// We're done
+				return;
+			}
+			// Default the record ID list
+			this.query().recordId = [];
 			// Log the message
-			this.result().log($utility.util.format('Host [%s] Not Found', ($utility.lodash.isNull($hostName.host()) ? $hostName.domain() : $utility.util.format('%s.%s', $hostName.host(), $hostName.domain()))));
-			// We're done
-			return;
+			this.result().log($utility.util.format('Found Record Match [%s]', ($utility.lodash.isNull($hostName.host()) ? $hostName.domain() : $utility.util.format('%s.%s', $hostName.host(), $hostName.domain()))));
+			// Iterate over the records
+			$records.each(($record) => {
+				// Localize the host
+				let $host = $record.host;
+				// Check the record host
+				if ($host === '@') {
+					// Reset the host
+					$host = $domain.name;
+				} else {
+					// Reset the host
+					$host.concat('.', $domain.name);
+				}
+				// Reset the record host
+				$record.host = $host;
+				// Add the record to the result
+				this.result().record($record);
+				// Set the record ID into the query
+				this.query().recordId.push($record.id.toString());
+			});
 		}
-		// Default the record ID list
-		this.query().recordId = [];
-		// Log the message
-		this.result().log($utility.util.format('Found Record Match [%s]', ($utility.lodash.isNull($hostName.host()) ? $hostName.domain() : $utility.util.format('%s.%s', $hostName.host(), $hostName.domain()))));
-		// Iterate over the records
-		$records.each(($record) => {
-			// Localize the host
-			let $host = $record.host;
-			// Check the record host
-			if ($host === '@') {
-				// Reset the host
-				$host = $domain.name;
-			} else {
-				// Reset the host
-				$host.concat('.', $domain.name);
-			}
-			// Reset the record host
-			$record.host = $host;
-			// Add the record to the result
-			this.result().record($record);
-			// Set the record ID into the query
-			this.query().recordId.push($record.id.toString());
-		});
 		// Define our finish
 		let $finish = new Date();
 		// Log the finish
