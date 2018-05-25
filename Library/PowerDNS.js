@@ -166,7 +166,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Set the domain ID into the WHERE clause
 		$clause.where.domainId = {[$db.Operator.eq]: $domainId};
 		// Check the query type
-		if ($type.toLowerCase() !== 'any') {
+		if (($type.toLowerCase() !== 'any') && !$forTransfer) {
 			// Add the record type to the clause
 			$clause.where.type = {
 				[$db.Operator.eq]: $parameters.qtype.toUpperCase()
@@ -190,7 +190,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Query for the record(s)
 		let $records = await $db.model('dnsRecord').findAll($clause);
 		// Check for records
-		if (!$records && !$records.length && !$forTransfer) {
+		if ((!$records || !$records.length) && !$utility.lodash.isNull($host) && !$forTransfer) {
 			// Update the host name
 			$clause.where.host = {
 				[$db.Operator.eq]: '*'
@@ -199,7 +199,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 			$records = await $db.model('dnsRecord').findAll($clause);
 		}
 		// Check for records
-		if (!$records && !$records.length) {
+		if (!$records || !$records.length) {
 			// Log the message
 			this.result().log($utility.util.format('Zone [%s] Has No Records', $domainName));
 			// We're done
