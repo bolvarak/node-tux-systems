@@ -115,13 +115,13 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 	/**
 	 * This method performs a lookup for a domain and its associated user
 	 * @async
-	 * @name LibraryPowerDNS._lookupDomainAndUser()
+	 * @name LibraryPowerDNS._lookupDomain()
 	 * @param {string} $domainName
-	 * @returns {Promise.<Array.<Sequelize.Model>>}
+	 * @returns {Promise.<Sequelize.Model>}
 	 * @throws {Error}
 	 * @private
 	 */
-	async _lookupDomainAndUser($domainName) {
+	async _lookupDomain($domainName) {
 		// Load the domain
 		let $domain = await $db.model('dnsDomain').findOne({
 			'where': {
@@ -138,10 +138,8 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 			// Throw the exception
 			throw new Error($utility.util.format('Zone [%s] Not Found', $domainName));
 		}
-		// Load the user for the domain
-		let $user = await $db.model('user').findById($domain.userId);
-		// We're done, return the domain and user
-		return [$domain, $user];
+		// We're done, return the domain
+		return $domain;
 	}
 
 	/**
@@ -166,7 +164,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Set the domain ID into the WHERE clause
 		$clause.where.domainId = {[$db.Operator.eq]: $domainId};
 		// Check the query type
-		if (($type.toLowerCase() !== 'any') && !$forTransfer) {
+		if (($type.toLowerCase() !== 'any')) {
 			// Add the record type to the clause
 			$clause.where.type = {
 				[$db.Operator.eq]: $type.toUpperCase()
@@ -190,7 +188,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Query for the record(s)
 		let $records = await $db.model('dnsRecord').findAll($clause);
 		// Check for records
-		if ((!$records || !$records.length) && !$utility.lodash.isNull($host) && !$forTransfer) {
+		if ((!$records || !$records.length) && !$utility.lodash.isNull($host)) {
 			// Update the host name
 			$clause.where.host = {
 				[$db.Operator.eq]: '*'
@@ -212,17 +210,17 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Iterate over the records
 		$records.each(($record) => {
 			// Localize the host
-			let $host = $record.host;
+			let $recordHost = $record.host;
 			// Check the record host
-			if ($host === '@') {
+			if ($recordHost === '@') {
 				// Reset the host
-				$host = $domainName;
+				$recordHost = $domainName;
 			} else {
 				// Reset the host
-				$host.concat('.', $domainName);
+				$recordHost.concat('.', $domainName);
 			}
 			// Reset the record host
-			$record.host = $host;
+			$record.host = $recordHost;
 			// Add the record to the result
 			this.result().record($record);
 			// Set the record ID into the query
@@ -257,7 +255,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 	 * @name LibraryPowerDNS.list()
 	 * @param {Object.<string, any>} $parameters
 	 * @returns {Promise.<void>}
-	 * @uses LibraryPowerDNS._lookupDomainAndUser()
+	 * @uses LibraryPowerDNS._lookupDomain()
 	 * @uses LibraryPowerDNS._lookupDomainRecords()
 	 * @uses LibraryPowerDNS.result()
 	 * @uses ModelPowerDNSResult.unsuccessful()
@@ -272,7 +270,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Parse the hostname
 		let $hostName = await $publicSuffix.parse($parameters.zonename);
 		// Load the domain and user
-		let [$domain, $user] = await this._lookupDomainAndUser($hostName.domain());
+		let $domain = await this._lookupDomain($hostName.domain());
 		// Log the message
 		this.result().log($utility.util.format('Zone [%s] Matched', $hostName.domain()));
 		// Set the domain ID into the query
@@ -299,7 +297,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 	 * @name LibraryPowerDNS.lookup()
 	 * @param {Object.<string, any>} $parameters
 	 * @returns {Promise.<void>}
-	 * @uses LibraryPowerDNS._lookupDomainAndUser()
+	 * @uses LibraryPowerDNS._lookupDomain()
 	 * @uses LibraryPowerDNS._lookupDomainRecords()
 	 * @uses LibraryPowerDNS.result()
 	 * @uses ModelPowerDNSResult.unsuccessful()
@@ -307,8 +305,6 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 	 * @uses ModelPowerDNSResult.record()
 	 */
 	async lookup($parameters) {
-		// Define our skip records flag
-		let $skipRecords = false;
 		// Define our start
 		let $start = new Date();
 		// Log the start
@@ -316,7 +312,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Parse the hostname
 		let $hostName = await $publicSuffix.parse($parameters.qname);
 		// Loojup the domain and user
-		let [$domain, $user] = await this._lookupDomainAndUser($hostName.domain());
+		let $domain = await this._lookupDomain($hostName.domain());
 		// Log the message
 		this.result().log($utility.util.format('Zone [%s] Matched', $hostName.domain()));
 		// Set the domain ID into the query
