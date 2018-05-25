@@ -48,13 +48,12 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 	 * @name ModelPowerDNSResult.a()
 	 * @param {string} $name
 	 * @param {number} $ttl
-	 * @param {uuid} $domainId
 	 * @param {string} $content
 	 * @param {boolean, optional} $auth [true]
 	 * @returns {ModelPowerDNSResult}
 	 * @uses ModelPowerDNSResult.add()
 	 */
-	a($name, $ttl, $domainId, $content, $auth = true) {
+	a($name, $ttl, $content, $auth = true) {
 		// Define our record object
 		let $record = {};
 		// Define the type
@@ -78,13 +77,12 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 	 * @name ModelPowerDNSResult.aaaa()
 	 * @param {string} $name
 	 * @param {number} $ttl
-	 * @param {uuid} $domainId
 	 * @param {string} $content
 	 * @param {boolean, optional} $auth [true]
 	 * @returns {ModelPowerDNSResult}
 	 * @uses ModelPowerDNSResult.add()
 	 */
-	aaaa($name, $ttl, $domainId, $content, $auth = true) {
+	aaaa($name, $ttl, $content, $auth = true) {
 		// Define our record object
 		let $record = {};
 		// Define the type
@@ -93,8 +91,6 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 		$record.qname = $name;
 		// Define the TTL
 		$record.ttl = $ttl;
-		// Define the domain ID
-		$record.domain_id = $domainId;
 		// Define the content
 		$record.content = $content;
 		// Define the authority
@@ -108,7 +104,6 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 	 * @name ModelPowerDNSResult.caa()
 	 * @param {string} $name
 	 * @param {number} $ttl
-	 * @param {uuid} $domainId
 	 * @param {number} $flags
 	 * @param {string} $tag
 	 * @param {string} $content
@@ -116,7 +111,7 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 	 * @returns {ModelPowerDNSResult}
 	 * @uses ModelPowerDNSResult.add()
 	 */
-	caa($name, $ttl, $domainId, $flags, $tag, $content, $auth = true) {
+	caa($name, $ttl, $flags, $tag, $content, $auth = true) {
 		// Define our record
 		let $record = {};
 		// Define the type
@@ -125,8 +120,6 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 		$record.qname = $name;
 		// Define the TTL
 		$record.ttl = $ttl;
-		// Define the domain ID
-		$record.domain_id = $domainId;
 		// Define the content
 		$record.content = $utility.util.format('%d %s %s', $flags, $tag, $content);
 		// Define the authority
@@ -140,13 +133,12 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 	 * @name ModelPowerDNSResult.cname()
 	 * @param {string} $name
 	 * @param {number} $ttl
-	 * @param {uuid} $domainId
 	 * @param {string} $content
 	 * @param {boolean, optional} $auth [true]
 	 * @returns {ModelPowerDNSResult}
 	 * @uses ModelPowerDNSResult.add()
 	 */
-	cname($name, $ttl, $domainId, $content, $auth = true) {
+	cname($name, $ttl, $content, $auth = true) {
 		// Define our record
 		let $record = {};
 		// Define the type
@@ -155,8 +147,6 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 		$record.qname = $name;
 		// Define the TTL
 		$record.ttl = $ttl;
-		// Define the domain ID
-		$record.domain_id = $domainId;
 		// Define the content
 		$record.content = $content;
 		// Define the authority
@@ -166,7 +156,7 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 	}
 
 
-	dnssec($name, $ttl, $domainId, $flags, $tag, $content, $auth = true) {
+	dnssec($name, $ttl, $flags, $tag, $content, $auth = true) {
 		// TODO - Hash out DNSSEC
 	}
 
@@ -175,14 +165,13 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 	 * @name ModelPowerDNSResult.mx()
 	 * @param {string} $name
 	 * @param {number} $ttl
-	 * @param {uuid} $domainId
 	 * @param {string} $content
 	 * @param {number} $priority
 	 * @param {boolean, optional} $auth [true]
 	 * @returns {ModelPowerDNSResult}
 	 * @uses ModelPowerDNSResult.add()
 	 */
-	mx($name, $ttl, $domainId, $content, $priority, $auth = true) {
+	mx($name, $ttl, $content, $priority, $auth = true) {
 		// Define our record object
 		let $record = {};
 		// Define the type
@@ -191,8 +180,6 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 		$record.qname = $name;
 		// Define the TTL
 		$record.ttl = $ttl;
-		// Define the domain ID
-		$record.domain_id = $domainId;
 		// Define the content
 		$record.content = $utility.util.format('%d %s', $priority, $content);
 		// Define the authority
@@ -206,13 +193,12 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 	 * @name ModelPowerDNSResult.ns()
 	 * @param {string} $name
 	 * @param {number} $ttl
-	 * @param {uuid} $domainId
 	 * @param {string} $content
 	 * @param {boolean, optional} $auth [true]
 	 * @returns {ModelPowerDNSResult}
 	 * @uses ModelPowerDNSResult.add()
 	 */
-	ns($name, $ttl, $domainId, $content, $auth = true) {
+	ns($name, $ttl, $content, $auth = true) {
 		// Define our record
 		let $record = {};
 		// Define the type
@@ -221,10 +207,8 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 		$record.qname = $name;
 		// Define the TTL
 		$record.ttl = $ttl;
-		// Define the domain ID
-		$record.domain_id = $domainId;
 		// Define the content
-		$record.content = $content.replace(/\.+$/, '').concat('.');
+		$record.content = $content;
 		// Define the authority
 		$record.auth = $auth;
 		// Add the record to the result
@@ -269,13 +253,12 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 	 * @name ModelPowerDNSResult.srv()
 	 * @param {string} $name
 	 * @param {number} $ttl
-	 * @param {uuid} $domainId
 	 * @param {string} $content
 	 * @param {boolean, optional} $auth [true]
 	 * @returns {ModelPowerDNSResult}
 	 * @uses ModelPowerDNSResult.add()
 	 */
-	srv($name, $ttl, $domainId, $priority, $weight, $port, $content, $auth = true) {
+	srv($name, $ttl, $priority, $weight, $port, $content, $auth = true) {
 		// Define our record
 		let $record = {};
 		// Define the type
@@ -284,8 +267,6 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 		$record.qname = $name;
 		// Define the TTL
 		$record.ttl = $ttl;
-		// Define the domain ID
-		$record.domain_id = $domainId;
 		// Define the content
 		$record.content = $utility.util.format('%d %d %d %s',$priority, $weight, $port, $content);
 		// Define the authority
@@ -299,13 +280,12 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 	 * @name ModelPowerDNSResult.txt()
 	 * @param {string} $name
 	 * @param {number} $ttl
-	 * @param {uuid} $domainId
 	 * @param {string} $content
 	 * @param {boolean, optional} $auth [true]
 	 * @returns {ModelPowerDNSResult}
 	 * @uses ModelPowerDNSResult.add()
 	 */
-	txt($name, $ttl, $domainId, $content, $auth = true) {
+	txt($name, $ttl, $content, $auth = true) {
 		// Define our record
 		let $record = {};
 		// Define the type
@@ -314,8 +294,6 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 		$record.qname = $name;
 		// Define the TTL
 		$record.ttl = $ttl;
-		// Define the domain ID
-		$record.domain_id = $domainId;
 		// Define the content
 		$record.content = $content;
 		// Define the authority
@@ -380,31 +358,31 @@ module.exports = class ModelPowerDNSResult { /// ModelPowerDNSResult Class Defin
 		// Check the record type
 		if ($type === 'a') {
 			// Return the A record bootstrapper
-			return this.a($record.host, $record.ttl, $record.domainId, $record.target);
+			return this.a($record.host, $record.ttl, $record.target);
 		} else if ($type === 'aaaa') {
 			// Return the AAAA record bootstrapper
-			return this.aaaa($record.host, $record.ttl, $record.domainId, $record.target);
+			return this.aaaa($record.host, $record.ttl, $record.target);
 		} else if ($type === 'caa') {
 			// Return the CAA record bootstrapper
-			return this.caa($record.host, $record.ttl, $record.domainId, $record.flag, $record.tag, $record.target);
+			return this.caa($record.host, $record.ttl, $record.flag, $record.tag, $record.target);
 		} else if ($type === 'cname') {
 			// Return the CNAME record bootstrapper
-			return this.cname($record.host, $record.ttl, $record.domainId, $record.target);
+			return this.cname($record.host, $record.ttl, $record.target);
 		} else if ($type === 'dnssec') {
 			// Return the DNSSEC record bootstrapper
 			return this;
 		} else if ($type === 'mx') {
 			// Return the MX record bootstrapper
-			return this.mx($record.host, $record.ttl, $record.domainId, $record.target, $record.priority);
+			return this.mx($record.host, $record.ttl, $record.target, $record.priority);
 		} else if ($type === 'ns') {
 			// Return the NS record bootstrapper
-			return this.ns($record.host, $record.ttl, $record.domainId, $record.target);
+			return this.ns($record.host, $record.ttl, $record.target);
 		} else if ($type === 'srv') {
 			// Return the SRV record bootstrapper
-			return this.srv($record.host, $record.ttl, $record.domainId, $record.priority, $record.weight, $record.port, $record.target);
+			return this.srv($record.host, $record.ttl, $record.priority, $record.weight, $record.port, $record.target);
 		} else if ($type === 'txt') {
 			// Return the TXT record bootstrapper
-			return this.txt($record.host, $record.ttl, $record.domainId, $record.target);
+			return this.txt($record.host, $record.ttl, $record.target);
 		} else {
 			// We're done, return the instance, the record type is unsupported
 			return this;
