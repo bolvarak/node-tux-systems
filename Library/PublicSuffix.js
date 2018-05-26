@@ -75,12 +75,21 @@ class LibraryPublicSuffix { /// LibraryPublicSuffix Class Definition ///////////
 				$parts.push($part);
 			}
 		});
+		// Check for parts
+		if (!$parts.length || ($parts.length === 1)) {
+			// Set the host
+			this.mHost = this.mSource;
+			// Set the domain
+			this.mDomain = null;
+			// Set the TLD
+			this.mTopLevelDomain = null;
+			// We're done
+			return;
+		}
 		// Set the found flag
 		let $found = false;
 		// Set the current working part
-		let $workingTld = $parts[($parts.length - 1)];
-		// Remove the last element from the array
-		$parts.pop();
+		let $workingTld = $parts.pop();
 		// Iterate until we have found the TLD
 		while (!$found) {
 			// Query for the TLD
@@ -96,18 +105,29 @@ class LibraryPublicSuffix { /// LibraryPublicSuffix Class Definition ///////////
 				// Reset the found flag
 				$found = true;
 			} else {
+				// Localize the part
+				let $part = $parts.pop();
+				// Check the part
+				if ($utility.lodash.isUndefined($part)) {
+					// Set the host
+					this.mHost = this.mSource;
+					// Set the domain
+					this.mDomain = null;
+					// Set the TLD
+					this.mTopLevelDomain = null;
+					// We're done
+					return;
+				}
 				// Update the workding TLD
-				$workingTld = $workingTld.concat('.', $parts[($parts.length - 1)]);
-				// Remove the last element of the array
-				$parts.pop();
+				$workingTld = $workingTld.concat('.', $parts.pop());
 			}
 		}
 		// Set the top-level domain into the instance
 		this.tld($workingTld);
 		// Set the domain into the instance
-		this.domain(''.concat($parts[($parts.length - 1)], '.', $workingTld));
+		this.domain(''.concat($parts.pop(), '.', $workingTld));
 		// Set the host name
-		this.host($parts[($parts.length - 2)] || null);
+		this.host($parts.length ? $parts.join('.') : null);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

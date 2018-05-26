@@ -204,7 +204,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Log the message
 		this.result().log($utility.util.format('Zone [%s] Has [%d] Records', $domainName, $records.length));
 		// Iterate over the records
-		$records.each(($record) => {
+		$records.each(async ($record) => {
 			// Localize the host
 			let $recordHost = $record.host;
 			// Check the record host
@@ -221,13 +221,21 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 			// Reset the record host
 			$record.host = $recordHost;
 			// Add the record to the result
-			this.result().record($record);
+			await this.result().record($record);
 			// Set the record ID into the query
 			this.query().recordId.push($record.id.toString());
 		});
 	}
 
-
+	/**
+	 * This method looks up the records for the domain when an AXFR is requested
+	 * @async
+	 * @name LibraryPowerDNS._lookupDomainRecordsForTransfer()
+	 * @param {uuid} $domainId
+	 * @param {string} $domainName
+	 * @returns {Promise.<void>}
+	 * @private
+	 */
 	async _lookupDomainRecordsForTransfer($domainId, $domainName) {
 		// Define our record clause
 		let $clause = {};
@@ -251,7 +259,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 		// Log the message
 		this.result().log($utility.util.format('Zone [%s] Has [%d] Records', $domainName, $records.length));
 		// Iterate over the records
-		$records.each(($record) => {
+		$records.each(async ($record) => {
 			// Localize the host
 			let $recordHost = $record.host;
 			// Check the record host
@@ -265,7 +273,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 			// Reset the record host
 			$record.host = $recordHost;
 			// Add the record to the result
-			this.result().record($record);
+			await this.result().record($record);
 			// Set the record ID into the query
 			this.query().recordId.push($record.id.toString());
 		});
