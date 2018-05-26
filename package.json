@@ -13,6 +13,7 @@
 		"cookie-parser": "~1.4.3",
 		"crypto": "^1.0.1",
 		"dns-zonefile": "^0.2.2",
+		"dnsd": "^0.9.6",
 		"ejs": "^2.5.7",
 		"ejs-locals": "^1.0.2",
 		"express": "^4.16.3",

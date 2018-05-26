@@ -211,6 +211,9 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 			if ($recordHost === '@') {
 				// Reset the host
 				$recordHost = $domainName;
+			} else if ($recordHost === '*') {
+				// Reset the host
+				$recordHost = ($hostName.host() + '.' + $domainName);
 			} else {
 				// Reset the host
 				$recordHost = ($recordHost + '.' + $domainName);
