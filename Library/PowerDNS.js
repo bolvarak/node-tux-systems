@@ -213,7 +213,7 @@ module.exports = class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //
 				$recordHost = $domainName;
 			} else if ($recordHost === '*') {
 				// Reset the host
-				$recordHost = ($hostName.host() + '.' + $domainName);
+				$recordHost = ($host + '.' + $domainName);
 			} else {
 				// Reset the host
 				$recordHost = ($recordHost + '.' + $domainName);
