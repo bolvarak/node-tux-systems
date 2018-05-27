@@ -3,8 +3,7 @@
 		"target": "es5",
 		"module": "commonjs",
 		"lib": [
-			"es2017",
-			"dom"
+			"es2017"
 		],
 		"checkJs": true,
 		"declaration": true,
