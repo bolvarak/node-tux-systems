@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"target": "es2017",
+		"target": "es5",
 		"module": "commonjs",
 		"lib": [
 			"es2017",
@@ -9,7 +9,7 @@
 		"checkJs": true,
 		"declaration": true,
 		"sourceMap": true,
-		"outDir": "./dist/out-tsc",
+		"outDir": "./build",
 		"removeComments": true,
 		"strict": true,
 		"noUnusedLocals": true,
