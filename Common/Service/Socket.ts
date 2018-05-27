@@ -1,0 +1,383 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+'use strict'; /// Strict Syntax //////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+import { CommonUtility as utility } from '../Utility'; /// Utility Module ////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+import * as net from 'net'; /// Network Module ///////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+import { CommonService } from '../Service'; /// Abstract Service Class ///////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+export class CommonServiceSocketClient { /// CommonServiceSocketClient Class Definition //////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Properties ///////////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * This property contains the ID of the client
+	 * @name CommonServiceSocketClient.id
+	 * @property
+	 * @public
+	 * @readonly
+	 * @type {string}
+	 */
+	public readonly id: string = utility.uuid();
+
+	/**
+	 * This property contains the stream associated with the client
+	 * @name CommonServiceSocketClient.conneciton
+	 * @property
+	 * @public
+	 * @readonly
+	 * @type {net.Socket}
+	 */
+	public readonly connection: net.Socket;
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Constructor //////////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * This method instantiates a new Socket Service Client
+	 * @name CommonServiceSocketClient.constructor()
+	 * @param {net.Socket} $stream
+	 * @public
+	 * @returns {CommonServiceSocketClient}
+	 */
+	public constructor($stream: net.Socket) {
+		// Set the stream into the instance
+		this.connection = $stream;
+	}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+}; /// End CommonServiceSocketClient Class Definition ////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+export abstract class CommonServiceSocket extends CommonService { /// CommonServiceSocket Class Definition ///////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Properties ///////////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * This property contains a map of connected clients
+	 * @name CommonServiceSocket.mClients
+	 * @property
+	 * @protected
+	 * @type {Array<CommonServiceSocketClient>}
+	 */
+	protected mClients: Array<CommonServiceSocketClient> = [];
+
+	/**
+	 * This property contains the instance of the server
+	 * @name CommonServiceSocket.mServer
+	 * @property
+	 * @protected
+	 * @type {net.Server}
+	 */
+	protected mServer: net.Server = net.createServer();
+
+	/**
+	 * This property contains our shutdown flag
+	 * @name CommonServiceSocket.mShutdown
+	 * @property
+	 * @protected
+	 * @type {boolean}
+	 */
+	protected mShutdown: boolean = false;
+
+	/**
+	 * This property contains our socket file path
+	 * @name CommonServiceSocket.mSocket
+	 * @property
+	 * @protected
+	 * @type {string}
+	 */
+	protected mSocket: string = '';
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Constructor //////////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * This method instantiates a new Socket Service
+	 * @name CommonServiceSocket.constructor()
+	 * @param {string} $socketPath
+	 * @param {string, optional} $sysLogId ['tux-systems-socket']
+	 * @param {string, optional} $logLevel ['debug']
+	 * @public
+	 * @returns {CommonServiceSocket}
+	 */
+	public constructor($socketPath: string, $sysLogId: string = 'tux-systems-socket', $logLevel: string = 'debug') {
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		super($sysLogId, $logLevel); /// Super Constructor ///////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		//// Assignments /////////////////////////////////////////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		// Set the socket path into the instance
+		this.mSocket = $socketPath;
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		/// Event Registration ///////////////////////////////////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		// SIGINT
+		process.on('SIGINT', async () => {
+			// Cleanup the connections and shut the server down
+			await this.cleanUp();
+		});
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	} /// End Constructor ////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Implementations //////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * This method starts the server
+	 * @async
+	 * @name CommonServiceSocket.start()
+	 * @public
+	 * @returns {Promise<void>}
+	 * @uses CommonService.logger()
+	 * @uses CommonServiceSocket.preFlight()
+	 * @uses CommonServiceSocket.clientSetup()
+	 * @uses CommonServiceSocket.clientConnect()
+	 */
+	public async start() : Promise<void> {
+		// Try to start the server
+		try {
+			// Await the pre-flight checks
+			await this.preFlight();
+			// Instantiate the server
+			this.mServer = net.createServer(async ($stream) => {
+				// Execute the client setup
+				await this.clientSetup($stream);
+			});
+			// Log the message
+			this.logger().info('Starting Server');
+			// Start the server
+			this.mServer.listen(this.mSocket);
+			// Attach to the connection event
+			this.mServer.on('connection', this.clientConnect);
+		} catch ($error) {
+			// Log the error
+			this.logger().error($error);
+			// We're done, kill the process
+			process.exit(1);
+		}
+	}
+
+	/**
+	 * This method shuts down the server
+	 * @async
+	 * @name CommonServiceSocket.shutdownServer()
+	 * @public
+	 * @returns {Promise<void>}
+	 * @uses CommonService.logger()
+	 */
+	public async stop(): Promise<void> {
+		// Log the message
+		this.logger().info('Stopping Server');
+		// Close the server
+		this.mServer.close();
+		// We're done, kill the process
+		process.exit(0);
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Abstract Methods /////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * This method responds to an incoming connection
+	 * @abstract
+	 * @async
+	 * @name CommonServiceSocket.clientConnect()
+	 * @param {net.Socket} $stream
+	 * @protected
+	 * @returns {Promise<void>}
+	 */
+	protected abstract async clientConnect($stream: net.Socket): Promise<void>;
+
+	/**
+	 * This method handles a client disconnecting
+	 * @abstract
+	 * @async
+	 * @name CommonServiceSocket.clientDisconnect()
+	 * @param {string} $clientId
+	 * @param {net.Socket} $stream
+	 * @protected
+	 * @returns {Promise<void>}
+	 */
+	protected abstract async clientDisconnect($clientId: string, $stream: net.Socket): Promise<void>;
+
+	/**
+	 * This method forces a client to disconnect
+	 * @abstract
+	 * @async
+	 * @name CommonServiceSocket.clientForceDisconnect()
+	 * @param {string} $clientId
+	 * @param {Socket} $stream
+	 * @returns {Promise<void>}
+	 */
+	protected abstract async clientForceDisconnect($clientId: string, $stream: net.Socket): Promise<void>;
+
+	/**
+	 * This method handles the client request
+	 * @abstract
+	 * @async
+	 * @name CommonServiceSocket.clientRequest()
+	 * @param {string} $clientId
+	 * @param {net.Socket} $stream
+	 * @param {Buffer} $payload
+	 * @protected
+	 * @returns {Promise<void>}
+	 */
+	protected abstract async clientRequest($clientId: string, $stream: net.Socket, $payload: Buffer): Promise<void>;
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Protected Methods ////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * This method executes pre-flight checks to ensure a clean operating environment
+	 * @async
+	 * @name CommonServiceSocket.preFlight()
+	 * @protected
+	 * @returns {Promise<void>}
+	 * @uses CommonService.logger()
+	 */
+	protected async preFlight(): Promise<void> {
+		// Log the message
+		this.logger().info('Running Pre-Flight Checks');
+		// Try to stat the socket file
+		try {
+			// Stat the socket file
+			await utility.fsStat(this.mSocket);
+			// Log the message
+			this.logger().info('Socket Artifact Found');
+			// Try to purge the socket file
+			try {
+				// Log the message
+				this.logger().info('Purging Socket Artifact');
+				// Purge the socket file
+				await utility.fsUnlink(this.mSocket);
+			} catch ($error) {
+				// Log the error
+				this.logger().error($error);
+				// We're done, kill the process
+				process.exit(1);
+			}
+		} catch ($error) {
+			// Log the message
+			this.logger().info('Socket Artifact Not Found');
+		}
+		// Log the message
+		this.logger().info('Pre-Flight Checks Finished');
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Public Methods ///////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * This method cleans up the clients and stops the server
+	 * @async
+	 * @name CommonServiceSocket.cleanUp()
+	 * @public
+	 * @returns {Promise<void>}
+	 * @uses CommonService.logger()
+	 * @uses CommonServiceSocket.clientForceDisconnect()
+	 * @uses CommonServiceSocket.stop()
+	 */
+	public async cleanUp(): Promise<void> {
+		// Check the shutdown flag
+		if (!this.mShutdown) {
+			// Reset the shutdown flag
+			this.mShutdown = true;
+			// Log the message
+			this.logger().info('Cleaning Up Clients');
+			// Iterate over the client IDs
+			for (let $index: number = 0; $index < this.mClients.length; ++$index) {
+				// Reomove and localize the client ID
+				let $client = this.mClients[$index];
+				// Emit the event
+				await this.clientForceDisconnect($client.id, $client.connection);
+				// Log the message
+				this.logger().info(utility.util.format('Forcing Client [%s] Disconnect', $client.id));
+				// Close the client
+				$client.connection.end();
+			}
+			// Close the server
+			await this.stop();
+		}
+	}
+
+	/**
+	 * This method sets up a client and binds to its events
+	 * @async
+	 * @name CommonServiceSocket.clientSetup()
+	 * @param {net.Socket} $stream
+	 * @public
+	 * @returns {Promise<void>}
+	 * @uses CommonService.logger()
+	 * @uses CommonServiceSocket.clientDisconnect()
+	 * @uses CommonServiceSocket.clientRequest()
+	 */
+	public async clientSetup($stream: net.Socket): Promise<void> {
+		// Generate the new client
+		let $client = new CommonServiceSocketClient($stream);
+		// Log the message
+		this.logger().info(utility.util.format('Client [%s] Locked', $client.id));
+		// Set the client into the pool
+		this.mClients.push($client);
+		// Bind to the disconnect event
+		$stream.on('end', async () => {
+			// Process the client disconnect
+			await this.clientDisconnect($client.id, $stream);
+			// Log the message
+			this.logger().info(utility.util.format('Client [%s] Disconnected', $client.id));
+		});
+		// Bind to the data event
+		$stream.on('data', async ($payload) => {
+			// Localize the payload
+			let $data = $payload.toString().trim().toLowerCase();
+			// Check for a killswitch
+			if ($data === '\\q') {
+				// We're done, kill the connection
+				return $stream.end();
+			} else if ($data === '\\c') {
+				console.log('Clients', this.mClients);
+				// Send the client list to this client
+				$stream.write(JSON.stringify(this.mClients).concat('\n'));
+			} else {
+				// Process the client request
+				await this.clientRequest($client.id, $stream, $payload);
+			}
+		});
+		// Log the message
+		this.logger().info(utility.util.format('Client [%s] Loaded', $client.id));
+	}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+}; /// End CommonServiceSocket Class Definition //////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
