@@ -71,8 +71,8 @@ const LibraryPublicSuffix = require('../Library/PublicSuffix'); /// PublicSuffix
 				$db.model('dnsDomain').create({
 					'name': $domainName,
 					'nameServer': [
-						'ns1.tux.systems',
-						'ns2.tux.systems'
+						'ns1.'.concat($domainName),
+						'ns2.'.concat($domainName)
 					],
 					'userId': $user.id
 				}).then(($domain) => {
@@ -80,8 +80,20 @@ const LibraryPublicSuffix = require('../Library/PublicSuffix'); /// PublicSuffix
 					console.log('Added Domain:\t' + $domainName);
 					// Define our record awaitables
 					let $awaitRecord = [];
+					// Localize the recordsa
+					let $records = $config.system.default.domain[$domainName].record;
+					// Add the IPv6 Nameserver records
+					$records.unshift({'host': 'ns1', 'isSystem': true, 'target': '2604:a880:800:a1::a35:f001', 'type': 'AAAA', 'ttl': 3600});
+					$records.unshift({'host': 'ns2', 'isSystem': true, 'target': '2604:a880:800:a1::a35:f001', 'type': 'AAAA', 'ttl': 3600});
+					// Add the IPv4 Nameserver records
+					$records.unshift({'host': 'ns2', 'isSystem': true, 'target': '159.89.247.183', 'type': 'A', 'ttl': 3600});
+					$records.unshift({'host': 'ns1', 'isSystem': true, 'target': '159.65.244.5', 'type': 'A', 'ttl': 3600});
+					// Add the Nameserver records
+					// Add the IPv4 Nameserver records
+					$records.unshift({'host': '@', 'isSystemRecord': true, 'target': 'ns2'.concat($domainName), 'type': 'NS', 'ttl': 3600});
+					$records.unshift({'host': '@', 'isSystemRecord': true, 'target': 'ns1'.concat($domainName), 'type': 'NS', 'ttl': 3600});
 					// Iterate over the records
-					$config.system.default.domain[$domainName].record.each(async ($record) => {
+					$records.each(async ($record) => {
 						// Set the domain ID into the record
 						$record.domainId = $domain.id;
 						// Set the user ID into the record
@@ -91,13 +103,12 @@ const LibraryPublicSuffix = require('../Library/PublicSuffix'); /// PublicSuffix
 							// Create the record
 							$db.model('dnsRecord').create($record).then(() => {
 								// Log the message
-								console.log('Added Record:\t' + $record.host + '.' + $domainName + '(' + $record.type + ')');
+								console.log('Added Record:\t' + (($record.host === '@') ? '' : ($record.host + '.')) + $domainName + ' (' + $record.type + ')');
 								// We're done, resolve the promise
 								$resolveRecord();
 							}).catch(($error) => {
 								// Log the message
-								// Log the message
-								console.log('Unable to Add Record:\t' + $record.host + '.' + $domainName + '(' + $record.type + ')');
+								console.log('Unable to Add Record:\t' + (($record.host === '@') ? '' : ($record.host + '.')) + $domainName + '(' + $record.type + ')');
 								// We're done, resolve the promise
 								$resolveRecord();
 							});

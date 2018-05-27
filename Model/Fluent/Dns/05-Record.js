@@ -46,6 +46,12 @@ module.exports = ($sequelize, $type) => { /// DNS Record Lookup Fluent Model Mod
 			'field': 'is_dynamic',
 			'type': $type.BOOLEAN
 		},
+		'isSystem': {
+			'allowNull': false,
+			'defaultValue': false,
+			'field': 'is_system_record',
+			'type': $type.BOOLEAN
+		}
 		'port': {
 			'allowNull': true,
 			'field': 'port',
