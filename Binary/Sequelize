@@ -83,8 +83,8 @@ const LibraryPublicSuffix = require('../Library/PublicSuffix'); /// PublicSuffix
 					// Localize the recordsa
 					let $records = $config.system.default.domain[$domainName].record;
 					// Add the IPv6 Nameserver records
-					$records.unshift({'host': 'ns1', 'isSystem': true, 'target': '2604:a880:800:a1::a35:f001', 'type': 'AAAA', 'ttl': 3600});
 					$records.unshift({'host': 'ns2', 'isSystem': true, 'target': '2604:a880:800:a1::a35:f001', 'type': 'AAAA', 'ttl': 3600});
+					$records.unshift({'host': 'ns1', 'isSystem': true, 'target': '2604:a880:800:a1::a35:f001', 'type': 'AAAA', 'ttl': 3600});
 					// Add the IPv4 Nameserver records
 					$records.unshift({'host': 'ns2', 'isSystem': true, 'target': '159.89.247.183', 'type': 'A', 'ttl': 3600});
 					$records.unshift({'host': 'ns1', 'isSystem': true, 'target': '159.65.244.5', 'type': 'A', 'ttl': 3600});
