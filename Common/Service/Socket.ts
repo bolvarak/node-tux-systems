@@ -3,7 +3,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-import { CommonUtility as utility } from '../Utility'; /// Utility Module ////////////////////////////////////////////
+import { CommonUtility as Utility } from '../Utility'; /// Utility Module ////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -30,7 +30,7 @@ export class CommonServiceSocketClient { /// CommonServiceSocketClient Class Def
 	 * @readonly
 	 * @type {string}
 	 */
-	public readonly id: string = utility.uuid();
+	public readonly id: string = Utility.uuid();
 
 	/**
 	 * This property contains the stream associated with the client
@@ -272,7 +272,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 		// Try to stat the socket file
 		try {
 			// Stat the socket file
-			await utility.fsStat(this.mSocket);
+			await Utility.fsStat(this.mSocket);
 			// Log the message
 			this.logger().info('Socket Artifact Found');
 			// Try to purge the socket file
@@ -280,7 +280,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 				// Log the message
 				this.logger().info('Purging Socket Artifact');
 				// Purge the socket file
-				await utility.fsUnlink(this.mSocket);
+				await Utility.fsUnlink(this.mSocket);
 			} catch ($error) {
 				// Log the error
 				this.logger().error($error);
@@ -323,7 +323,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 				// Emit the event
 				await this.clientForceDisconnect($client.id, $client.connection);
 				// Log the message
-				this.logger().info(utility.util.format('Forcing Client [%s] Disconnect', $client.id));
+				this.logger().info(Utility.util.format('Forcing Client [%s] Disconnect', $client.id));
 				// Close the client
 				$client.connection.end();
 			}
@@ -347,7 +347,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 		// Generate the new client
 		let $client = new CommonServiceSocketClient($stream);
 		// Log the message
-		this.logger().info(utility.util.format('Client [%s] Locked', $client.id));
+		this.logger().info(Utility.util.format('Client [%s] Locked', $client.id));
 		// Set the client into the pool
 		this.mClients.push($client);
 		// Bind to the disconnect event
@@ -355,7 +355,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 			// Process the client disconnect
 			await this.clientDisconnect($client.id, $stream);
 			// Log the message
-			this.logger().info(utility.util.format('Client [%s] Disconnected', $client.id));
+			this.logger().info(Utility.util.format('Client [%s] Disconnected', $client.id));
 		});
 		// Bind to the data event
 		$stream.on('data', async ($payload) => {
@@ -375,7 +375,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 			}
 		});
 		// Log the message
-		this.logger().info(utility.util.format('Client [%s] Loaded', $client.id));
+		this.logger().info(Utility.util.format('Client [%s] Loaded', $client.id));
 	}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
