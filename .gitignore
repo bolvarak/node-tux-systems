@@ -92,5 +92,5 @@ typings/
 Common/Configuration.js
 Source/Common/Configuration.ts
 Build/*
-!Build/.gitignore
+!Build/.gitkeep
 
