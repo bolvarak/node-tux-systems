@@ -8,6 +8,7 @@
 		"tsc": "tsc"
 	},
 	"dependencies": {
+		"@types/bluebird": "^3.5.20",
 		"@types/body-parser": "^1.17.0",
 		"@types/body-parser-xml": "^1.1.0",
 		"@types/cookie-parser": "^1.4.1",
@@ -44,10 +45,12 @@
 		"path": "^0.12.7",
 		"pg": "^6.4.1",
 		"pg-hstore": "^2.3.2",
+		"reflect-metadata": "^0.1.12",
 		"request": "^2.86.0",
 		"request-promise-native": "^1.0.5",
 		"sequelize": "^4.37.7",
 		"sequelize-auto": "^0.4.29",
+		"sequelize-typescript": "^0.6.5",
 		"typescript": "^2.8.3",
 		"util": "^0.10.3",
 		"uuid": "^3.2.1",
