@@ -90,8 +90,8 @@ const LibraryPublicSuffix = require('../Library/PublicSuffix'); /// PublicSuffix
 					$records.unshift({'host': 'ns1', 'isSystem': true, 'target': '159.65.244.5', 'type': 'A', 'ttl': 3600});
 					// Add the Nameserver records
 					// Add the IPv4 Nameserver records
-					$records.unshift({'host': '@', 'isSystemRecord': true, 'target': 'ns2.'.concat($domainName), 'type': 'NS', 'ttl': 1800});
-					$records.unshift({'host': '@', 'isSystemRecord': true, 'target': 'ns1.'.concat($domainName), 'type': 'NS', 'ttl': 1800});
+					$records.unshift({'host': '@', 'isSystem': true, 'target': 'ns2.'.concat($domainName), 'type': 'NS', 'ttl': 1800});
+					$records.unshift({'host': '@', 'isSystem': true, 'target': 'ns1.'.concat($domainName), 'type': 'NS', 'ttl': 1800});
 					// Iterate over the records
 					$records.each(async ($record) => {
 						// Set the domain ID into the record
