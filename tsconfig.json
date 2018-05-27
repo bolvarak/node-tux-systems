@@ -8,7 +8,7 @@
 		"checkJs": true,
 		"declaration": true,
 		"sourceMap": true,
-		"outDir": "./build",
+		"outDir": "./Build",
 		"removeComments": true,
 		"strict": true,
 		"noUnusedLocals": true,
@@ -16,9 +16,12 @@
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
 		"moduleResolution": "node",
-		"baseUrl": "./",
+		"baseUrl": "./Source",
 		"typeRoots": [
 			"node_modules/@types"
+		],
+		"exclude": [
+			"node_modules"
 		],
 		"esModuleInterop": true,
 		"experimentalDecorators": true,
