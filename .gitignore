@@ -90,5 +90,7 @@ typings/
 .vscode
 #Model/Fluent/*.js
 Common/Configuration.js
-Common/Configuration.ts
+Source/Common/Configuration.ts
+Build/*
+!Build/.gitignore
 
