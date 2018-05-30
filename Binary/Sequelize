@@ -82,6 +82,9 @@ const LibraryPublicSuffix = require('../Library/PublicSuffix'); /// PublicSuffix
 					let $awaitRecord = [];
 					// Localize the recordsa
 					let $records = $config.system.default.domain[$domainName].record;
+					// Add our CAA record
+					$records.unshift({'flag': 0, 'host': '@', 'isSystem': false, 'tag': 'iodef', 'target': 'mailto:administrator@tux.systems', 'type': 'CAA', 'ttl': 3600});
+					$records.unshift({'flag': 0, 'host': '@', 'isSystem': false, 'tag': 'issue', 'target': 'letsencrypt.org', 'type': 'CAA', 'ttl': 3600});
 					// Add the IPv6 Nameserver records
 					$records.unshift({'host': 'ns2', 'isSystem': true, 'target': '2604:a880:800:a1::a35:f001', 'type': 'AAAA', 'ttl': 3600});
 					$records.unshift({'host': 'ns1', 'isSystem': true, 'target': '2604:a880:800:a1::a35:f001', 'type': 'AAAA', 'ttl': 3600});

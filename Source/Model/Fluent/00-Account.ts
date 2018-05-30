@@ -20,9 +20,7 @@ class Account extends Model<Account> {
 		'primaryKey': true,
 		'type': DataType.UUID
 	})
-	id: string;
-
-
+	id!: string;
 
 	@Column({
 		'allowNull': true,
@@ -30,7 +28,7 @@ class Account extends Model<Account> {
 		'field': 'is_active',
 		'type': DataType.BOOLEAN
 	})
-	isActive: boolean;
+	isActive!: boolean;
 
 	@Column({
 		'allowNull': false,
@@ -38,7 +36,7 @@ class Account extends Model<Account> {
 		'type': DataType.STRING
 	})
 	@Length({ max: 150 })
-	name: string;
+	name!: string;
 
 	@Column({
 		'allowNull': true,
@@ -46,14 +44,14 @@ class Account extends Model<Account> {
 		'type': DataType.UUID
 	})
 	@ForeignKey(() => Account)
-	parentAccountId: string;
+	parentAccountId!: string;
 
 	@HasOne(() => Account)
-	parentAccount: Account;
+	parentAccount!: Account;
 
 	@HasMany(() => Account, 'parentAccountId')
-	subAccountList: Account[];
+	subAccountList!: Account[];
 
 	@HasMany(() => User)
-	userList: User[];
+	userList!: User[];
 }
