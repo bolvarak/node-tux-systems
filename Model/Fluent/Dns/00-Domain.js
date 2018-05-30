@@ -72,7 +72,7 @@ module.exports = ($sequelize, $type) => { /// DNS Domain Lookup Fluent Model Mod
 		},
 		'ttl': {
 			'allowNull': false,
-			'defaultValue': 1800,
+			'defaultValue': 3600,
 			'field': 'ttl',
 			'type': $type.INTEGER,
 			'validate': {
