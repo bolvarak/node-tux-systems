@@ -7,61 +7,45 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 import {
-	AfterCreate,
-	AfterFind,
-	AfterUpdate,
 	BeforeCreate,
 	BeforeUpdate,
+	BelongsTo,
 	Column,
 	DataType,
-	IsEmail,
 	HasMany,
-	Length,
+	IsInt,
 	Model,
-	Table,
-	BelongsTo
+	Table
 } from 'sequelize-typescript';
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-import Account from './00-Account'; /// Account Model ////////////////////////////////////////////////////////////////
+import User from '../05-User'; /// User Model ////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-import SocialMediaProfile from './15-SocialMediaProfile'; /// SocialMediaProfile Model ///////////////////////////////
+import DnsRecord from './05-Record'; /// DNS Record Model ////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-import DnsDomain from './Dns/00-Domain'; /// DNS Domain Model ////////////////////////////////////////////////////////
+import DnsQuery from './10-Query'; /// DNS Query Model ///////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-import DnsRecord from './Dns/05-Record'; /// DNS Record Model ////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-import DnsQuery from './Dns/10-Query'; /// DNS Query Model ///////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-import $crypto from '../../Library/Cryptography'; /// Cryptographic Library //////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// User Table Model Definition //////////////////////////////////////////////////////////////////////////////////////
+/// DNS Domain Table Model Definition ////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @Table({
 	indexes: [
-		{fields: ['account_id']},
-		{fields: ['email_address']},
 		{fields: ['is_active']},
-		{fields: ['is_admin']},
-		{fields: ['is_primary']},
-		{fields: ['username'], unique: true}
+		{fields: ['is_public']},
+		{fields: ['name']},
+		{fields: ['name', 'version', 'deleted_at', 'is_active'], 'unique': true},
+		{fields: ['serial']},
+		{fields: ['user_id']}
 	],
-	tableName: 'user'
+	tableName: 'dns_domain'
 })
-export default class User extends Model<User> {
+export default class DnsDomain extends Model<DnsDomain> {
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// Columns //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -69,28 +53,12 @@ export default class User extends Model<User> {
 
 	@Column({
 		allowNull: false,
-		field: 'account_id',
-		type: DataType.UUID
+		defaultValue: 604800,
+		field: 'expire',
+		type: DataType.INTEGER
 	})
-	accountId!: string;
-
-	@Column({
-		allowNull: false,
-		field: 'email_address',
-		type: DataType.STRING,
-	})
-	@IsEmail
-	emailAddress!: string;
-
-	@Column({
-		allowNull: false,
-		field: 'first_name',
-		type: DataType.STRING(150)
-	})
-	@Length({
-		max: 150
-	})
-	firstName!: string;
+	@IsInt
+	expire!: number;
 
 	@Column({
 		allowNull: false,
@@ -110,60 +78,75 @@ export default class User extends Model<User> {
 	isActive!: boolean;
 
 	@Column({
-		allowNull: true,
-		defaultValue: false,
-		field: 'is_admin',
-		type: DataType.BOOLEAN
-	})
-	isAdmin!: boolean;
-
-	@Column({
 		allowNull: false,
 		defaultValue: false,
-		field: 'is_primary',
+		field: 'is_public',
 		type: DataType.BOOLEAN
 	})
-	isPrimary!: boolean;
-
-	@Column({
-		'allowNull': false,
-		field: 'last_name',
-		type: DataType.STRING(150)
-	})
-	@Length({
-		max: 150
-	})
-	lastName!: string;
+	isPublic!: boolean;
 
 	@Column({
 		allowNull: true,
-		field: 'password',
+		field: 'name',
 		type: DataType.TEXT
 	})
-	password!: string;
+	name!: string;
 
 	@Column({
 		allowNull: false,
-		field: 'username',
-		type: DataType.STRING(125)
+		field: 'name_server',
+		type: DataType.ARRAY(DataType.TEXT)
 	})
-	@Length({
-		max: 125
+	nameServer!: Array<string>;
+
+	@Column({
+		allowNull: false,
+		defaultValue: 10800,
+		field: 'refresh',
+		type: DataType.INTEGER
 	})
-	username!: string;
+	@IsInt
+	refresh!: number;
+
+	@Column({
+		allowNull: false,
+		defaultValue: 3600,
+		field: 'retry',
+		type: DataType.INTEGER
+	})
+	@IsInt
+	retry!: number;
+
+	@Column({
+		allowNull: false,
+		defaultValue: Math.round(Date.now() / 1000),
+		field: 'serial',
+		type: DataType.INTEGER
+	})
+	serial!: number;
+
+	@Column({
+		allowNull: false,
+		defaultValue: 3600,
+		field: 'ttl',
+		type: DataType.INTEGER
+	})
+	@IsInt
+	ttl!: number;
+
+	@Column({
+		allowNull: false,
+		field: 'user_id',
+		type: DataType.UUID
+	})
+	userId!: string;
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// Associations /////////////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	@BelongsTo(() => Account)
-	account!: Account;
-
-	@HasMany(() => SocialMediaProfile)
-	socialMediaProfileList!: SocialMediaProfile[];
-
-	@HasMany(() => DnsDomain)
-	domainList!: DnsDomain[];
+	@BelongsTo(() => User)
+	user!: User;
 
 	@HasMany(() => DnsRecord)
 	domainRecordList!: DnsRecord[];
@@ -175,24 +158,15 @@ export default class User extends Model<User> {
 	/// Hooks ////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	@AfterCreate
-	@AfterFind
-	@AfterUpdate
-	public static decryptPassword($instance: User): void {
-		// Check for a hash
-		if ($crypto.isHash($instance.password)) {
-			// Decrypt the password
-			$instance.password = $crypto.staticKeyDecrypt($instance.password);
-		}
-	}
-
 	@BeforeCreate
 	@BeforeUpdate
-	public static encryptPassword($instance: User): void {
-		// Check for a hash
-		if (!$crypto.isHash($instance.password)) {
-			// Encrypt the password
-			$instance.password = $crypto.staticKeyEncrypt($instance.password);
+	public static normalizeDomainNameAndNameServers($instance: DnsDomain): void {
+		// Reset the domain name
+		$instance.name = $instance.name.toLowerCase().trim();
+		// Iterate over the name servers
+		for (let $index = 0; $index < $instance.nameServer.length; ++$index) {
+			// Reset the name server
+			$instance.nameServer[$index] = $instance.nameServer[$index].toLowerCase().trim();
 		}
 	}
 };

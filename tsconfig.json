@@ -20,9 +20,6 @@
 		"typeRoots": [
 			"node_modules/@types"
 		],
-		"exclude": [
-			"node_modules"
-		],
 		"esModuleInterop": true,
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true

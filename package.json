@@ -21,6 +21,7 @@
 		"@types/lodash": "^4.14.109",
 		"@types/pg": "^7.4.9",
 		"@types/request": "^2.47.0",
+		"@types/request-promise-native": "^1.0.14",
 		"@types/sequelize": "^4.27.20",
 		"@types/uuid": "^3.4.3",
 		"aws-sdk": "^2.238.1",

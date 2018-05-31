@@ -15,7 +15,7 @@ import * as $crypto from 'crypto'; /// Cryptography Module /////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-export default class { /// Cryptography Library Module Definition ////////////////////////////////////////////////////
+export default class LibraryCryptography { /// Cryptography Library Module Definition ////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -25,7 +25,7 @@ export default class { /// Cryptography Library Module Definition //////////////
 	/**
 	 * This method loads a key from the file system or cleans a raw key file
 	 * @async
-	 * @name Cryptography.getKey()
+	 * @name LibraryCryptography.getKey()
 	 * @param {string} $key
 	 * @param {boolean, optional} $trim [false]
 	 * @protected
@@ -48,13 +48,13 @@ export default class { /// Cryptography Library Module Definition //////////////
 
 	/**
 	 * This method decrypts a hash using a static secret
-	 * @name Cryptography.staticKeyDecrypt()
+	 * @name LibraryCryptography.staticKeyDecrypt()
 	 * @param {string} $hash
 	 * @public
 	 * @returns {string}
 	 * @static
 	 * @throws {Error}
-	 * @uses Cryptography.secret()
+	 * @uses LibraryCryptography.secret()
 	 */
 	public static staticKeyDecrypt($hash: string): string {
 		// Grab the encryption data
@@ -92,15 +92,15 @@ export default class { /// Cryptography Library Module Definition //////////////
 
 	/**
 	 * This method encrypts textual data using a static secret
-	 * @name Cryptography.staticKeyEncrypt()
+	 * @name LibraryCryptography.staticKeyEncrypt()
 	 * @param {string} $data
 	 * @param {number, optional} $passes
 	 * @public
 	 * @returns {string}
 	 * @static
-	 * @uses Cryptography.passes()
-	 * @uses Cryptography.algorithm()
-	 * @uses Cryptography.secret()
+	 * @uses LibraryCryptography.passes()
+	 * @uses LibraryCryptography.algorithm()
+	 * @uses LibraryCryptography.secret()
 	 */
 	public static staticKeyEncrypt($data: string, $passes?: number): string {
 		// Define our hash
@@ -134,7 +134,7 @@ export default class { /// Cryptography Library Module Definition //////////////
 
 	/**
 	 * This method determines whether or not a string is a hash that was encrypted by this system, or follows the same pattern
-	 * @name Cryptography.isHash()
+	 * @name LibraryCryptography.isHash()
 	 * @param {string} $test
 	 * @public
 	 * @returns {boolean}
@@ -158,7 +158,7 @@ export default class { /// Cryptography Library Module Definition //////////////
 
 	/**
 	 * This method returns the cryptographic algorithm from the configuration
-	 * @name Cryptography.algorithm()
+	 * @name LibraryCryptography.algorithm()
 	 * @public
 	 * @returns {string}
 	 * @static
@@ -170,7 +170,7 @@ export default class { /// Cryptography Library Module Definition //////////////
 
 	/**
 	 * This method returns the cryptographic redundancy, or passes, from the configuration
-	 * @name Cryptography.passes()
+	 * @name LibraryCryptography.passes()
 	 * @public
 	 * @returns {number}
 	 * @static
@@ -183,12 +183,12 @@ export default class { /// Cryptography Library Module Definition //////////////
 	/**
 	 * This method returns the cryptographic public key from the configuration, with the ability to reset it inline, for private key encryption and decryption
 	 * @async
-	 * @name Cryptography.privateKey()
+	 * @name LibraryCryptography.privateKey()
 	 * @param {boolean, optional} $trim [false]
 	 * @param {string, optional} $key ['']
 	 * @public
 	 * @static
-	 * @uses Cryptography.getKey()
+	 * @uses LibraryCryptography.getKey()
 	 */
 	public static async privateKey($trim: boolean = false, $key: string = ''): Promise<string> {
 		// Check for a key in the configuration
@@ -203,12 +203,12 @@ export default class { /// Cryptography Library Module Definition //////////////
 	/**
 	 * This method returns the cryptographic public key from the configuration, with the ability to reset it inline, for public key encryption and decryption
 	 * @async
-	 * @name Cryptography.publicKey()
+	 * @name LibraryCryptography.publicKey()
 	 * @param {boolean, optional} $trim [false]
 	 * @param {string, optional} $key ['']
 	 * @public
 	 * @static
-	 * @uses Cryptography.getKey()
+	 * @uses LibraryCryptography.getKey()
 	 */
 	public static async publicKey($trim: boolean = false, $key: string = ''): Promise<string> {
 		// Check for a key in the configuration
@@ -222,7 +222,7 @@ export default class { /// Cryptography Library Module Definition //////////////
 
 	/**
 	 * This method returns the cryptographic secret from the configuration, for static key encryption and decryption
-	 * @name Cryptography.secret()
+	 * @name LibraryCryptography.secret()
 	 * @public
 	 * @returns {string}
 	 * @static
