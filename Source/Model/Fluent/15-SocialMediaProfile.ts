@@ -19,52 +19,11 @@ import { User } from './05-User'; /// User Model ///////////////////////////////
 @Table({
 	indexes: [
 		{fields: ['is_active']},
-		{fields: ['name']},
-		{fields: ['parent_account_id']}
+		{fields: ['type']},
+		{fields: ['user_id']}
 	],
-	tableName: 'account'
+	tableName: 'social_media_profile'
 })
-export class Account extends Model<Account> {
+export class SocialMediaProfile extends Model<SocialMediaProfile> {
 
-	@Column({
-		allowNull: false,
-		defaultValue: DataType.UUIDV4,
-		field: 'id',
-		primaryKey: true,
-		type: DataType.UUID
-	})
-	id!: string;
-
-	@Column({
-		allowNull: false,
-		defaultValue: true,
-		field: 'is_active',
-		type: DataType.BOOLEAN
-	})
-	isActive!: boolean;
-
-	@Column({
-		allowNull: false,
-		field: 'name',
-		type: DataType.STRING
-	})
-	@Length({ max: 150 })
-	name!: string;
-
-	@Column({
-		allowNull: true,
-		field: 'parent_account_id',
-		type: DataType.UUID
-	})
-	@ForeignKey(() => Account)
-	parentAccountId!: string;
-
-	@HasOne(() => Account)
-	parentAccount!: Account;
-
-	@HasMany(() => Account, 'parentAccountId')
-	subAccountList!: Account[];
-
-	@HasMany(() => User)
-	userList!: User[];
 }
