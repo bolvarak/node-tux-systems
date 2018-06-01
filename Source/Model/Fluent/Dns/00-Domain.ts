@@ -97,7 +97,7 @@ export default class DnsDomain extends Model<DnsDomain> {
 		field: 'name_server',
 		type: DataType.ARRAY(DataType.TEXT)
 	})
-	nameServer!: Array<string>;
+	nameServer!: string[];
 
 	@Column({
 		allowNull: false,

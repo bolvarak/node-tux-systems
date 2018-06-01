@@ -3,7 +3,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-import { CommonUtility as Utility } from '../Utility'; /// Utility Module ////////////////////////////////////////////
+import $utility from '../Utility'; /// Utility Module ////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -11,11 +11,11 @@ import * as net from 'net'; /// Network Module /////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-import { CommonService } from '../Service'; /// Abstract Service Class ///////////////////////////////////////////////
+import Service from '../Service'; /// Abstract Service Class /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-export class CommonServiceSocketClient { /// CommonServiceSocketClient Class Definition //////////////////////////////
+export class Client { /// Client Class Definition ////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -24,17 +24,17 @@ export class CommonServiceSocketClient { /// CommonServiceSocketClient Class Def
 
 	/**
 	 * This property contains the ID of the client
-	 * @name CommonServiceSocketClient.id
+	 * @name Client.id
 	 * @property
 	 * @public
 	 * @readonly
 	 * @type {string}
 	 */
-	public readonly id: string = Utility.uuid();
+	public readonly id: string = $utility.uuid();
 
 	/**
 	 * This property contains the stream associated with the client
-	 * @name CommonServiceSocketClient.conneciton
+	 * @name Client.conneciton
 	 * @property
 	 * @public
 	 * @readonly
@@ -48,10 +48,10 @@ export class CommonServiceSocketClient { /// CommonServiceSocketClient Class Def
 
 	/**
 	 * This method instantiates a new Socket Service Client
-	 * @name CommonServiceSocketClient.constructor()
+	 * @name Client.constructor()
 	 * @param {net.Socket} $stream
 	 * @public
-	 * @returns {CommonServiceSocketClient}
+	 * @returns {SocketClient}
 	 */
 	public constructor($stream: net.Socket) {
 		// Set the stream into the instance
@@ -59,12 +59,12 @@ export class CommonServiceSocketClient { /// CommonServiceSocketClient Class Def
 	}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-}; /// End CommonServiceSocketClient Class Definition ////////////////////////////////////////////////////////////////
+}; /// End SocketClient Class Definition /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-export abstract class CommonServiceSocket extends CommonService { /// CommonServiceSocket Class Definition ///////////
+export abstract class Socket extends Service { /// Socket Class Definition ///////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -73,16 +73,16 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 
 	/**
 	 * This property contains a map of connected clients
-	 * @name CommonServiceSocket.mClients
+	 * @name Socket.mClients
 	 * @property
 	 * @protected
-	 * @type {Array<CommonServiceSocketClient>}
+	 * @type {Client[]}
 	 */
-	protected mClients: Array<CommonServiceSocketClient> = [];
+	protected mClients: Client[] = [];
 
 	/**
 	 * This property contains the instance of the server
-	 * @name CommonServiceSocket.mServer
+	 * @name Socket.mServer
 	 * @property
 	 * @protected
 	 * @type {net.Server}
@@ -91,7 +91,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 
 	/**
 	 * This property contains our shutdown flag
-	 * @name CommonServiceSocket.mShutdown
+	 * @name Socket.mShutdown
 	 * @property
 	 * @protected
 	 * @type {boolean}
@@ -100,7 +100,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 
 	/**
 	 * This property contains our socket file path
-	 * @name CommonServiceSocket.mSocket
+	 * @name Socket.mSocket
 	 * @property
 	 * @protected
 	 * @type {string}
@@ -113,14 +113,14 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 
 	/**
 	 * This method instantiates a new Socket Service
-	 * @name CommonServiceSocket.constructor()
+	 * @name Socket.constructor()
 	 * @param {string} $socketPath
 	 * @param {string, optional} $sysLogId ['tux-systems-socket']
 	 * @param {string, optional} $logLevel ['debug']
-	 * @public
-	 * @returns {CommonServiceSocket}
+	 * @protected
+	 * @returns {Socket}
 	 */
-	public constructor($socketPath: string, $sysLogId: string = 'tux-systems-socket', $logLevel: string = 'debug') {
+	protected constructor($socketPath: string, $sysLogId: string = 'tux-systems-socket', $logLevel: string = 'debug') {
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		super($sysLogId, $logLevel); /// Super Constructor ///////////////////////////////////////////////////////////
@@ -154,13 +154,13 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 	/**
 	 * This method starts the server
 	 * @async
-	 * @name CommonServiceSocket.start()
+	 * @name Socket.start()
 	 * @public
 	 * @returns {Promise<void>}
 	 * @uses CommonService.logger()
-	 * @uses CommonServiceSocket.preFlight()
-	 * @uses CommonServiceSocket.clientSetup()
-	 * @uses CommonServiceSocket.clientConnect()
+	 * @uses Socket.preFlight()
+	 * @uses Socket.clientSetup()
+	 * @uses Socket.clientConnect()
 	 */
 	public async start() : Promise<void> {
 		// Try to start the server
@@ -189,7 +189,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 	/**
 	 * This method shuts down the server
 	 * @async
-	 * @name CommonServiceSocket.shutdownServer()
+	 * @name Socket.shutdownServer()
 	 * @public
 	 * @returns {Promise<void>}
 	 * @uses CommonService.logger()
@@ -211,7 +211,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 	 * This method responds to an incoming connection
 	 * @abstract
 	 * @async
-	 * @name CommonServiceSocket.clientConnect()
+	 * @name Socket.clientConnect()
 	 * @param {net.Socket} $stream
 	 * @protected
 	 * @returns {Promise<void>}
@@ -222,7 +222,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 	 * This method handles a client disconnecting
 	 * @abstract
 	 * @async
-	 * @name CommonServiceSocket.clientDisconnect()
+	 * @name Socket.clientDisconnect()
 	 * @param {string} $clientId
 	 * @param {net.Socket} $stream
 	 * @protected
@@ -234,9 +234,10 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 	 * This method forces a client to disconnect
 	 * @abstract
 	 * @async
-	 * @name CommonServiceSocket.clientForceDisconnect()
+	 * @name Socket.clientForceDisconnect()
 	 * @param {string} $clientId
 	 * @param {Socket} $stream
+	 * @protected
 	 * @returns {Promise<void>}
 	 */
 	protected abstract async clientForceDisconnect($clientId: string, $stream: net.Socket): Promise<void>;
@@ -245,14 +246,14 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 	 * This method handles the client request
 	 * @abstract
 	 * @async
-	 * @name CommonServiceSocket.clientRequest()
+	 * @name Socket.clientRequest()
 	 * @param {string} $clientId
 	 * @param {net.Socket} $stream
-	 * @param {Buffer} $payload
+	 * @param {Buffer} $data
 	 * @protected
 	 * @returns {Promise<void>}
 	 */
-	protected abstract async clientRequest($clientId: string, $stream: net.Socket, $payload: Buffer): Promise<void>;
+	protected abstract async clientRequest($clientId: string, $stream: net.Socket, $data: Buffer): Promise<void>;
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// Protected Methods ////////////////////////////////////////////////////////////////////////////////////////////
@@ -261,7 +262,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 	/**
 	 * This method executes pre-flight checks to ensure a clean operating environment
 	 * @async
-	 * @name CommonServiceSocket.preFlight()
+	 * @name Socket.preFlight()
 	 * @protected
 	 * @returns {Promise<void>}
 	 * @uses CommonService.logger()
@@ -272,7 +273,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 		// Try to stat the socket file
 		try {
 			// Stat the socket file
-			await Utility.fsStat(this.mSocket);
+			await $utility.fsStat(this.mSocket);
 			// Log the message
 			this.logger().info('Socket Artifact Found');
 			// Try to purge the socket file
@@ -280,7 +281,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 				// Log the message
 				this.logger().info('Purging Socket Artifact');
 				// Purge the socket file
-				await Utility.fsUnlink(this.mSocket);
+				await $utility.fsUnlink(this.mSocket);
 			} catch ($error) {
 				// Log the error
 				this.logger().error($error);
@@ -302,12 +303,12 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 	/**
 	 * This method cleans up the clients and stops the server
 	 * @async
-	 * @name CommonServiceSocket.cleanUp()
+	 * @name Socket.cleanUp()
 	 * @public
 	 * @returns {Promise<void>}
 	 * @uses CommonService.logger()
-	 * @uses CommonServiceSocket.clientForceDisconnect()
-	 * @uses CommonServiceSocket.stop()
+	 * @uses Socket.clientForceDisconnect()
+	 * @uses Socket.stop()
 	 */
 	public async cleanUp(): Promise<void> {
 		// Check the shutdown flag
@@ -323,7 +324,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 				// Emit the event
 				await this.clientForceDisconnect($client.id, $client.connection);
 				// Log the message
-				this.logger().info(Utility.util.format('Forcing Client [%s] Disconnect', $client.id));
+				this.logger().info($utility.util.format('Forcing Client [%s] Disconnect', $client.id));
 				// Close the client
 				$client.connection.end();
 			}
@@ -335,19 +336,19 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 	/**
 	 * This method sets up a client and binds to its events
 	 * @async
-	 * @name CommonServiceSocket.clientSetup()
+	 * @name Socket.clientSetup()
 	 * @param {net.Socket} $stream
 	 * @public
 	 * @returns {Promise<void>}
 	 * @uses CommonService.logger()
-	 * @uses CommonServiceSocket.clientDisconnect()
-	 * @uses CommonServiceSocket.clientRequest()
+	 * @uses Socket.clientDisconnect()
+	 * @uses Socket.clientRequest()
 	 */
 	public async clientSetup($stream: net.Socket): Promise<void> {
 		// Generate the new client
-		let $client = new CommonServiceSocketClient($stream);
+		let $client = new Client($stream);
 		// Log the message
-		this.logger().info(Utility.util.format('Client [%s] Locked', $client.id));
+		this.logger().info($utility.util.format('Client [%s] Locked', $client.id));
 		// Set the client into the pool
 		this.mClients.push($client);
 		// Bind to the disconnect event
@@ -355,7 +356,7 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 			// Process the client disconnect
 			await this.clientDisconnect($client.id, $stream);
 			// Log the message
-			this.logger().info(Utility.util.format('Client [%s] Disconnected', $client.id));
+			this.logger().info($utility.util.format('Client [%s] Disconnected', $client.id));
 		});
 		// Bind to the data event
 		$stream.on('data', async ($payload) => {
@@ -375,9 +376,9 @@ export abstract class CommonServiceSocket extends CommonService { /// CommonServ
 			}
 		});
 		// Log the message
-		this.logger().info(Utility.util.format('Client [%s] Loaded', $client.id));
+		this.logger().info($utility.util.format('Client [%s] Loaded', $client.id));
 	}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-}; /// End CommonServiceSocket Class Definition //////////////////////////////////////////////////////////////////////
+}; /// End Socket Class Definition ///////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -3,28 +3,100 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-import $config from '../Common/Configuration'; /// Configuration Settings ////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
- /// Database Connection ///////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 import $utility from '../Common/Utility'; /// Utility Module /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-import $publicSuffix from './PublicSuffix'; /// PublibSuffix Library /////////////////////////////////////////////////
+import PublicSuffix from './PublicSuffix'; /// PublibSuffix Library //////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 import PowerDnsResult from '../Model/PowerDNS/Result'; /// PowerDNS Result Model /////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+import {IFindOptions} from 'sequelize-typescript';
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+import DnsQuery from '../Model/Fluent/Dns/10-Query'; /// DNS Query Model /////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+import DnsDomain from '../Model/Fluent/Dns/00-Domain'; /// DNS Domain Model //////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+import DnsRecord from '../Model/Fluent/Dns/05-Record'; /// DNS Record Model //////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+import * as log4js from 'log4js'; /// log4js Logging Module //////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition //////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Properties ///////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * This property contains the instance of our logging module
+	 * @name LibraryPowerDNS.mLogger
+	 * @type {log4js.Logger}
+	 */
+	protected mLogger: log4js.Logger;
+
+	/**
+	 * This property contains the method translation map
+	 * @name LibraryPowerDNS.mMethods
+	 * @type {{[requestMethod: string]: string}}
+	 */
+	protected mMethods: {[requestMethod: string]: string} = {
+		'aborttransaction': '_abortTransaction',
+		'activatedomainkey': '_activateDomainKey',
+		'adddomainkey': '_addDomainKey',
+		'calculatesoaserial': '_calculateSoaSerial',
+		'committransaction': '_commitTransaction',
+		'createslavedomain': 'createSlaveDomain',
+		'deactivatedomainkey': '_deactivateDomainKey',
+		'directbackendcmd': '_directBackendCommand',
+		'feedents': '_feedEnts',
+		'feedents3': '_feedEnts3',
+		'feedrecord': '_feedRecord',
+		'getalldomainmetadata': '_getAllDomainMetaData',
+		'getalldomains': '_getAllDomains',
+		'getbeforeandafternamesabsolute': '_getBeforeAndAfterNamesAbsolute',
+		'getdomaininfo': '_getDomainInfo',
+		'getdomainkeys': '_getDomainKeys',
+		'getdomainmetadata': '_getDomainMetaData',
+		'gettsigkey': '_getTsigKey',
+		'initialize': '_initialize',
+		'ismaster': '_isMaster',
+		'list': '_list',
+		'lookup': '_lookup',
+		'removedomainkey': '_removeDomainKey',
+		'replacerrset': '_replaceRrSet',
+		'searchrecords': '_searchRecords',
+		'setdomainmetadata': '_setDomainMetaData',
+		'setnotified': '_setNotified',
+		'starttransaction': '_startTransaction',
+		'supermasterbackend': '_superMasterBackend'
+	};
+
+	/**
+	 * This property contains the query model instance for the incoming request
+	 * @name LibraryPowerDNS.mQuery
+	 * @type {DnsQuery}
+	 */
+	protected mQuery: DnsQuery;
+
+	/**
+	 * This property contains the result to send back to PowerDNS
+	 * @name LibraryPowerDNS.mResult
+	 * @type {PowerDnsResult}
+	 */
+	protected mResult: PowerDnsResult = new PowerDnsResult();
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// Constructor //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -36,96 +108,39 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 	 * @param {Sequelize.Model} $queryModel
 	 * @param {log4js.Logger} $logger
 	 */
-	constructor($queryModel, $logger) {
+	constructor($queryModel: DnsQuery, $logger: log4js.Logger) {
 
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/// Properties ///////////////////////////////////////////////////////////////////////////////////////////////
-		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		/**
-		 * This property contains the instance of our logging module
-		 * @name LibraryPowerDNS.mLogger
-		 * @type {log4js.Logger}
-		 */
+		// Set the logger into the instance
 		this.mLogger = $logger;
-
-		/**
-		 * This property contains the method translation map
-		 * @name LibraryPowerDNS.mMethods
-		 * @type {Object.<string, string>}
-		 */
-		this.mMethods = {
-			'aborttransaction': '_abortTransaction',
-			'activatedomainkey': '_activateDomainKey',
-			'adddomainkey': '_addDomainKey',
-			'calculatesoaserial': '_calculateSoaSerial',
-			'committransaction': '_commitTransaction',
-			'createslavedomain': 'createSlaveDomain',
-			'deactivatedomainkey': '_deactivateDomainKey',
-			'directbackendcmd': '_directBackendCommand',
-			'feedents': '_feedEnts',
-			'feedents3': '_feedEnts3',
-			'feedrecord': '_feedRecord',
-			'getalldomainmetadata': '_getAllDomainMetaData',
-			'getalldomains': '_getAllDomains',
-			'getbeforeandafternamesabsolute': '_getBeforeAndAfterNamesAbsolute',
-			'getdomaininfo': '_getDomainInfo',
-			'getdomainkeys': '_getDomainKeys',
-			'getdomainmetadata': '_getDomainMetaData',
-			'gettsigkey': '_getTsigKey',
-			'initialize': '_initialize',
-			'ismaster': '_isMaster',
-			'list': '_list',
-			'lookup': '_lookup',
-			'removedomainkey': '_removeDomainKey',
-			'replacerrset': '_replaceRrSet',
-			'searchrecords': '_searchRecords',
-			'setdomainmetadata': '_setDomainMetaData',
-			'setnotified': '_setNotified',
-			'starttransaction': '_startTransaction',
-			'supermasterbackend': '_superMasterBackend'
-		};
-
-		/**
-		 * This property contains the query model instance for the incoming request
-		 * @name LibraryPowerDNS.mQuery
-		 * @type {Sequelize.Model}
-		 */
+		// Set the query into the instance
 		this.mQuery = $queryModel;
-
-		/**
-		 * This property contains the result to send back to PowerDNS
-		 * @name LibraryPowerDNS.mResult
-		 * @type {Object.<string, any>}
-		 */
-		this.mResult = new ModelPowerDNSResult();
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	} /// End Constructor ////////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// Private Methods //////////////////////////////////////////////////////////////////////////////////////////////
+	/// Lookup Methods ///////////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
 	 * This method performs a lookup for a domain and its associated user
 	 * @async
-	 * @name LibraryPowerDNS._lookupDomain()
+	 * @name LibraryPowerDNS.lookupDomain()
 	 * @param {string} $domainName
-	 * @returns {Promise.<Sequelize.Model>}
+	 * @protected
+	 * @returns {Promise<DnsDomain>}
 	 * @throws {Error}
-	 * @private
 	 */
-	async _lookupDomain($domainName) {
+	protected async lookupDomain($domainName: string): Promise<DnsDomain> {
 		// Load the domain
-		let $domain = await $db.model('dnsDomain').findOne({
-			'where': {
-				'isActive': {
-					[$db.Operator.eq]: true
+		let $domain: DnsDomain|null = await DnsDomain.findOne({
+			where: {
+				isActive: {
+					[DnsDomain.sequelize.Op.eq]: true
 				},
-				'name': {
-					[$db.Operator.eq]: $domainName.toLowerCase()
+				name: {
+					[DnsDomain.sequelize.Op.eq]: $domainName.toLowerCase()
 				}
 			}
 		});
@@ -141,52 +156,44 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 	/**
 	 * This method looks up the records for the domain
 	 * @async
-	 * @name LibraryPowerDNS._lookupDomainRecords()
-	 * @param {uuid} $domainId
+	 * @name LibraryPowerDNS.lookupDomainRecords()
+	 * @param {string} $domainId
 	 * @param {string} $domainName
 	 * @param {string, optional} $host [null]
 	 * @param {string, optional} $type ['ANY']
-	 * @returns {Promise.<void>}
-	 * @private
+	 * @protected
+	 * @returns {Promise<void>}
 	 */
-	async _lookupDomainRecords($domainId, $domainName, $host = null, $type = 'ANY') {
+	protected async lookupDomainRecords($domainId: string, $domainName: string, $host?: string, $type: string = 'ANY'): Promise<void> {
 		// Define our record clause
-		let $clause = {};
+		let $clause: IFindOptions<DnsRecord> = {};
 		// Define the WHERE clause
 		$clause.where = {};
 		// Set the active flag into the WHERE clause
-		$clause.where.isActive = {[$db.Operator.eq]: true};
+		$clause.where.isActive = {[DnsRecord.sequelize.Op.eq]: true};
 		// Set the domain ID into the WHERE clause
-		$clause.where.domainId = {[$db.Operator.eq]: $domainId};
+		$clause.where.domainId = {[DnsRecord.sequelize.Op.eq]: $domainId};
 		// Check the query type
 		if (($type.toLowerCase() !== 'any')) {
 			// Add the record type to the clause
-			$clause.where.type = {
-				[$db.Operator.eq]: $type.toUpperCase()
-			};
+			$clause.where.type = {[DnsRecord.sequelize.Op.eq]: $type.toUpperCase()};
 		}
 		// Check the host name
-		if ($utility.lodash.isNull($host)) {
+		if ($utility.lodash.isString($host)) {
 			// Add the host to the clause
-			$clause.where.host = {
-				[$db.Operator.eq]: '@'
-			};
+			$clause.where.host = {[DnsRecord.sequelize.Op.eq]: $host.toLowerCase()};
 		} else {
 			// Add the host to the clause
-			$clause.where.host = {
-				[$db.Operator.eq]: $host.toLowerCase(),
-			}
+			$clause.where.host = {[DnsRecord.sequelize.Op.eq]: '@'};
 		}
 		// Query for the record(s)
-		let $records = await $db.model('dnsRecord').findAll($clause);
+		let $records: DnsRecord[] = await DnsRecord.findAll($clause);
 		// Check for records
 		if ((!$records || !$records.length) && !$utility.lodash.isNull($host)) {
 			// Update the host name
-			$clause.where.host = {
-				[$db.Operator.eq]: '*'
-			}
+			$clause.where.host = {[DnsRecord.sequelize.Op.eq]: '*'}
 			// Execute the query await
-			$records = await $db.model('dnsRecord').findAll($clause);
+			$records = await DnsRecord.findAll($clause);
 		}
 		// Check for records
 		if (!$records || !$records.length) {
@@ -200,9 +207,9 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 		// Log the message
 		this.result().log($utility.util.format('Zone [%s] Has [%d] Records', $domainName, $records.length));
 		// Iterate over the records
-		$records.each(async ($record) => {
+		for (let $index: number = 0; $index < $records.length; ++$index) {
 			// Localize the host
-			let $recordHost = $record.host;
+			let $recordHost: string = $records[$index].host;
 			// Check the record host
 			if ($recordHost === '@') {
 				// Reset the host
@@ -215,34 +222,34 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 				$recordHost = ($recordHost + '.' + $domainName);
 			}
 			// Reset the record host
-			$record.host = $recordHost;
+			$records[$index].host = $recordHost;
 			// Add the record to the result
-			await this.result().record($record);
+			await this.result().record($records[$index]);
 			// Set the record ID into the query
-			this.query().recordId.push($record.id.toString());
-		});
+			this.query().recordId.push($records[$index].id.toString());
+		}
 	}
 
 	/**
 	 * This method looks up the records for the domain when an AXFR is requested
 	 * @async
-	 * @name LibraryPowerDNS._lookupDomainRecordsForTransfer()
-	 * @param {uuid} $domainId
+	 * @name LibraryPowerDNS.lookupDomainRecordsForTransfer()
+	 * @param {string} $domainId
 	 * @param {string} $domainName
-	 * @returns {Promise.<void>}
-	 * @private
+	 * @protected
+	 * @returns {Promise<void>}
 	 */
-	async _lookupDomainRecordsForTransfer($domainId, $domainName) {
+	protected async lookupDomainRecordsForTransfer($domainId: string, $domainName: string): Promise<void> {
 		// Define our record clause
-		let $clause = {};
+		let $clause: IFindOptions<DnsRecord> = {};
 		// Define the WHERE clause
 		$clause.where = {};
 		// Set the active flag into the WHERE clause
-		$clause.where.isActive = {[$db.Operator.eq]: true};
+		$clause.where.isActive = {[DnsRecord.sequelize.Op.eq]: true};
 		// Set the domain ID into the WHERE clause
-		$clause.where.domainId = {[$db.Operator.eq]: $domainId};
+		$clause.where.domainId = {[DnsRecord.sequelize.Op.eq]: $domainId};
 		// Query for the record(s)
-		let $records = await $db.model('dnsRecord').findAll($clause);
+		let $records: DnsRecord[] = await DnsRecord.findAll($clause);
 		// Check for records
 		if (!$records || !$records.length) {
 			// Log the message
@@ -255,9 +262,9 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 		// Log the message
 		this.result().log($utility.util.format('Zone [%s] Has [%d] Records', $domainName, $records.length));
 		// Iterate over the records
-		$records.each(async ($record) => {
+		for (let $index: number = 0; $index < $records.length; ++$index) {
 			// Localize the host
-			let $recordHost = $record.host;
+			let $recordHost: string = $records[$index].host;
 			// Check the record host
 			if ($recordHost === '@') {
 				// Reset the host
@@ -267,12 +274,12 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 				$recordHost = ($recordHost + '.' + $domainName);
 			}
 			// Reset the record host
-			$record.host = $recordHost;
+			$records[$index].host = $recordHost;
 			// Add the record to the result
-			await this.result().record($record);
+			await this.result().record($records[$index]);
 			// Set the record ID into the query
-			this.query().recordId.push($record.id.toString());
-		});
+			this.query().recordId.push($records[$index].id.toString());
+		};
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -283,13 +290,13 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 	 * This method initializes the backend, it does nothing since NodeJS doesn't need to be initialized, so we just bootstrap the response
 	 * @async
 	 * @name LibraryPowerDNS.initialize()
-	 * @param {Object.<string, any>} $parameters
-	 * @returns {Promise.<void>}
+	 * @protected
+	 * @returns {Promise<void>}
 	 * @uses LibraryPowerDNS.result()
 	 * @uses ModelPowerDNSResult.successful()
 	 * @uses ModelPowerDNSResult.log()
 	 */
-	async initialize($parameters) {
+	protected async initialize(): Promise<void> {
 		// Set the result flag
 		this.result().successful();
 		// Add the log message
@@ -300,26 +307,27 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 	 * This method performs an AXFR on a zone
 	 * @async
 	 * @name LibraryPowerDNS.list()
-	 * @param {Object.<string, any>} $parameters
-	 * @returns {Promise.<void>}
-	 * @uses LibraryPowerDNS._lookupDomain()
-	 * @uses LibraryPowerDNS._lookupDomainRecords()
+	 * @param {{zonename: string, domain_id?: number}} $parameters
+	 * @protected
+	 * @returns {Promise<void>}
+	 * @uses LibraryPowerDNS.lookupDomain()
+	 * @uses LibraryPowerDNS.lookupDomainRecords()
 	 * @uses LibraryPowerDNS.result()
 	 * @uses ModelPowerDNSResult.unsuccessful()
 	 * @uses ModelPowerDNSResult.log()
 	 * @uses ModelPowerDNSResult.record()
 	 */
-	async list($parameters) {
+	protected async list($parameters: {zonename: string, domain_id?: number}): Promise<void> {
 		// Define our start
-		let $start = new Date();
+		let $start: number = Date.now();
 		// Log the start
-		this.result().log('Start:' + $start.getTime());
+		this.result().log('Start:' + $start);
 		// Parse the hostname
-		let $hostName = await $publicSuffix.parse($parameters.zonename);
+		await PublicSuffix.parse($parameters.zonename);
 		// Load the domain and user
-		let $domain = await this._lookupDomain($hostName.domain());
+		let $domain = await this.lookupDomain(PublicSuffix.domain() as string);
 		// Log the message
-		this.result().log($utility.util.format('Zone [%s] Matched', $hostName.domain()));
+		this.result().log($utility.util.format('Zone [%s] Matched', PublicSuffix.domain()));
 		// Set the domain ID into the query
 		this.query().domainId = $domain.id;
 		// Set the user ID into the query
@@ -327,13 +335,13 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 		// Add the SOA record
 		this.result().soa($domain.name, $domain.nameServer[0], $domain.serial, $domain.refresh, $domain.retry, $domain.expire, $domain.ttl);
 		// Process the records
-		await this._lookupDomainRecordsForTransfer($domain.id, $domain.name);
+		await this.lookupDomainRecordsForTransfer($domain.id, $domain.name);
 		// Define our finish
-		let $finish = new Date();
+		let $finish: number = Date.now();
 		// Log the finish
-		this.result().log('Finish:' + $finish.getTime());
+		this.result().log('Finish:' + $finish);
 		// Log the time taken
-		this.result().log('TimeTaken:' + ($finish.getTime() - $start.getTime()));
+		this.result().log('TimeTaken:' + ($finish - $start));
 		// We're done
 		return;
 	}
@@ -342,26 +350,27 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 	 * This method performs a lookup on a record
 	 * @async
 	 * @name LibraryPowerDNS.lookup()
-	 * @param {Object.<string, any>} $parameters
-	 * @returns {Promise.<void>}
-	 * @uses LibraryPowerDNS._lookupDomain()
-	 * @uses LibraryPowerDNS._lookupDomainRecords()
+	 * @param {{qtype: string, qname: string, remote: string, local: string, real-remote: string, zone-id: number}} $parameters
+	 * @protected
+	 * @returns {Promise<void>}
+	 * @uses LibraryPowerDNS.lookupDomain()
+	 * @uses LibraryPowerDNS.lookupDomainRecords()
 	 * @uses LibraryPowerDNS.result()
 	 * @uses ModelPowerDNSResult.unsuccessful()
 	 * @uses ModelPowerDNSResult.log()
 	 * @uses ModelPowerDNSResult.record()
 	 */
-	async lookup($parameters) {
+	protected async lookup($parameters: {qtype: string, qname: string, remote: string, local: string, 'real-remote': string, 'zone-id': number}): Promise<void> {
 		// Define our start
-		let $start = new Date();
+		let $start: number = Date.now();
 		// Log the start
-		this.result().log('Start:' + $start.getTime());
+		this.result().log('Start:' + $start);
 		// Parse the hostname
-		let $hostName = await $publicSuffix.parse($parameters.qname);
+		await PublicSuffix.parse($parameters.qname);
 		// Loojup the domain and user
-		let $domain = await this._lookupDomain($hostName.domain());
+		let $domain = await this.lookupDomain(PublicSuffix.domain() as string);
 		// Log the message
-		this.result().log($utility.util.format('Zone [%s] Matched', $hostName.domain()));
+		this.result().log($utility.util.format('Zone [%s] Matched', PublicSuffix.domain()));
 		// Set the domain ID into the query
 		this.query().domainId = $domain.id;
 		// Set the user ID into the query
@@ -372,14 +381,14 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 			this.result().soa($domain.name, $domain.nameServer[0], $domain.serial, $domain.refresh, $domain.retry, $domain.expire, $domain.ttl);
 		} else {
 			// Lookup the records for the domain
-			await this._lookupDomainRecords($domain.id, $domain.name, $hostName.host(), $parameters.qtype);
+			await this.lookupDomainRecords($domain.id, $domain.name, (PublicSuffix.host() as string), $parameters.qtype);
 		}
 		// Define our finish
-		let $finish = new Date();
+		let $finish = Date.now();
 		// Log the finish
-		this.result().log('Finish:' + $finish.getTime());
+		this.result().log('Finish:' + $finish);
 		// Log the time taken
-		this.result().log('TimeTaken:' + ($finish.getTime() - $start.getTime()));
+		this.result().log('TimeTaken:' + ($finish - $start));
 		// We're done
 		return;
 	}
@@ -389,14 +398,14 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 	 * @async
 	 * @name LibraryPowerDNS.unsupported()
 	 * @returns {Promise.<void>}
-	 * @private
+	 * @protected
 	 * @uses LibraryPowerDNS.query()
 	 * @uses LibraryPowerDNS.logger()
 	 * @uses LibraryPowerDNS.result()
 	 * @uses ModelPowerDNSResult.unsuccessful()
 	 * @uses ModelPowerDNSResult.log()
 	 */
-	async unsupported() {
+	protected async unsupported(): Promise<void> {
 		// Define the message
 		let $message = $utility.util.format('Method [%s] Is Not Supported', this.query().request.method);
 		// Log the message
@@ -415,7 +424,8 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 	 * This method generates and sends the response
 	 * @async
 	 * @name LibraryPowerDNS.response()
-	 * @returns {Promise.<LibraryPowerDNS>}
+	 * @public
+	 * @returns {Promise<LibraryPowerDNS>}
 	 * @uses LibraryPowerDNS.query()
 	 * @uses LibraryPowerDNS.result()
 	 * @uses LibraryPowerDNS.__unsupported()
@@ -424,45 +434,24 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 	 * @uses ModelPowerDNSResult.unsuccessful()
 	 * @uses ModelPowerDNSResult.log()
 	 */
-	async response() {
+	public async response(): Promise<LibraryPowerDNS> {
 		// Try to process the query to elicit a response
 		try {
-			// Check for the method on the instance
-			switch(this.query().request.method.toLowerCase()) {
-				// initialize()
-				case 'initialize': await this.initialize(this.query().request.parameters); break;
-				// list()/axfr()
-				case 'list': await this.list(this.query().request.parameters); break;
-				// lookup()
-				case 'lookup': await this.lookup(this.query().request.parameters);break;
-				case 'aborttransaction':
-				case 'activatedomainkey':
-				case 'adddomainkey':
-				case 'calculatesoaserial':
-				case 'committransaction':
-				case 'createslavedomain':
-				case 'deactivatedomainkey':
-				case 'directbackendcmd':
-				case 'feedents':
-				case 'feedents3':
-				case 'feedrecord':
-				case 'getalldomainmetadata':
-				case 'getalldomains':
-				case 'getbeforeandafternamesabsolute':
-				case 'getdomaininfo':
-				case 'getdomainkeys':
-				case 'getdomainmetadata':
-				case 'gettsigkey':
-				case 'ismaster':
-				case 'removedomainkey':
-				case 'replacerrset':
-				case 'searchrecords':
-				case 'setdomainmetadata':
-				case 'setnotified':
-				case 'starttransaction':
-				case 'supermasterbackend':
-				// Unsupported
-				default: await this.unsupported(this.query().request.parameters); break;
+			// Localize the method
+			let $method: string = this.query().request.method.toLowerCase();
+			// Check the method
+			if ($method === 'initialize') {
+				// Initialize the service
+				await this.initialize();
+			} else if ($method === 'list') {
+				// Assert the parameter payload and list the zone
+				await this.list(this.query().request.parameters as {zonename: string, domain_id?: number});
+			} else if ($method === 'lookup') {
+				// Assert the parameter payload and lookup the host
+				await this.lookup(this.query().request.parameters as {qtype: string, qname: string, remote: string, local: string, 'real-remote': string, 'zone-id': number});
+			} else {
+				// Execute the unsupported workflow
+				await this.unsupported();
 			}
 			// Set the response into the query model
 			this.query().response = this.result().toObject();
@@ -491,7 +480,7 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 			// Add the log message
 			this.result().log($error.message);
 			// Set the response into the query model
-			this.query().response = this.result();
+			this.query().response = this.result().toObject();
 			// Try to save the response
 			try {
 				// Save the query model
@@ -518,9 +507,10 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 	/**
 	 * This method returns the logger from the instance
 	 * @name LibraryPowerDNS.logger()
+	 * @public
 	 * @returns {log4js.Logger}
 	 */
-	logger() {
+	public logger(): log4js.Logger {
 		// Return the logger from the instance
 		return this.mLogger;
 	}
@@ -528,12 +518,13 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 	/**
 	 * This method returns the PowerDNS query model from the instance with the ability to reset it inline
 	 * @name LibraryPowerDNS.query()
-	 * @param {Sequelize.Model, optional} $queryModel [undefined]
-	 * @returns {Sequelize.Model}
+	 * @param {DnsQuery, optional} $queryModel
+	 * @public
+	 * @returns {DnsQuery}
 	 */
-	query($queryModel = undefined) {
+	public query($queryModel?: DnsQuery): DnsQuery {
 		// Check for a provided query model
-		if ($queryModel instanceof Sequelize.Model) {
+		if ($queryModel) {
 			// Reset the query model into the instance
 			this.mQuery = $queryModel;
 		}
@@ -544,12 +535,13 @@ export default class LibraryPowerDNS { /// LibraryPowerDNS Class Definition ////
 	/**
 	 * This method returns the query result from the instance with the ability to reset it inline
 	 * @name LibraryPowerDNS.result()
-	 * @param {ModelPowerDNSResult, optional} $result [undefined]
-	 * @returns {ModelPowerDNSResult}
+	 * @param {PowerDnsResult, optional} $result
+	 * @public
+	 * @returns {PowerDnsResult}
 	 */
-	result($result = undefined) {
+	public result($result?: PowerDnsResult): PowerDnsResult {
 		// Check for a provided result
-		if ($result !== undefined) {
+		if ($result) {
 			// Reset the result into the instance
 			this.mResult = $result;
 		}

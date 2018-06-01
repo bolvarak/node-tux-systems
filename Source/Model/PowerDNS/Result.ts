@@ -35,18 +35,18 @@ export default class ModelPowerDNSResult { /// ModelPowerDNSResult Class Definit
 	 * @name ModelPowerDNSResult.mLog
 	 * @property
 	 * @protected
-	 * @type {Array.<string>}
+	 * @type {string[]}
 	 */
-	protected mLog: Array<string> = [];
+	protected mLog: string[] = [];
 
 	/**
 	 * This property contains the result records or flag
 	 * @name ModelPowerDNSResult.mResult
 	 * @property
 	 * @protected
-	 * @type {boolean|Array<PowerDnsRecord>}
+	 * @type {boolean|PowerDnsRecord[]}
 	 */
-	protected mResult: boolean|Array<PowerDnsRecord> = false;
+	public mResult: boolean|PowerDnsRecord[] = false;
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// Normalization Methods ////////////////////////////////////////////////////////////////////////////////////////
@@ -488,9 +488,9 @@ export default class ModelPowerDNSResult { /// ModelPowerDNSResult Class Definit
 	 * This method converts the result to a payload
 	 * @name ModelPowerDNSResult.toObject()
 	 * @public
-	 * @returns {{result: boolean|Array<PowerDnsRecord>, log: Array<string>}}
+	 * @returns {{result: boolean|PowerDnsRecord[], log: string[]}}
 	 */
-	public toObject(): {result: boolean|Array<PowerDnsRecord>, log: Array<string>} {
+	public toObject(): {result: boolean|PowerDnsRecord[], log: string[]} {
 		// Return the object format of our result
 		return {
 			'result': this.mResult,

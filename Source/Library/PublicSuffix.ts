@@ -62,9 +62,9 @@ export default class LibraryPublicSuffix { /// LibraryPublicSuffix Class Definit
 	 * @property
 	 * @protected
 	 * @static
-	 * @type {Array<string>}
+	 * @type {string[]}
 	 */
-	protected static mPublicSuffixData: Array<string> = [];
+	protected static mPublicSuffixData: string[] = [];
 
 	/**
 	 * This property contains the source hostname that was parsed
@@ -126,9 +126,9 @@ export default class LibraryPublicSuffix { /// LibraryPublicSuffix Class Definit
 	 */
 	protected static async process(): Promise<void> {
 		// Split the domain into parts
-		let $parts:Array<string> = [];
+		let $parts:string[] = [];
 		// Localize the parts
-		let $sourceParts: Array<string> = this.source().replace(':'.concat(this.mPort.toString()), '').trim().split(/\./);
+		let $sourceParts: string[] = this.source().replace(':'.concat(this.mPort.toString()), '').trim().split(/\./);
 		// Iterate over the parts
 		for (let $index: number = 0; $index < $sourceParts.length; ++$index) {
 			// Check the part
@@ -210,9 +210,9 @@ export default class LibraryPublicSuffix { /// LibraryPublicSuffix Class Definit
 		// Load the Public Suffix data
 		let $response = await $request.get('https://publicsuffix.org/list/public_suffix_list.dat');
 		// Define our data
-		let $tldList: Array<string> = [];
+		let $tldList: string[] = [];
 		// Split the lines
-		let $lines: Array<string> = $response.split(/\n/);
+		let $lines: string[] = $response.split(/\n/);
 		// Iterate over the data
 		for (let $index: number = 0; $index < $lines.length; ++$index) {
 			// Check for an empty line
@@ -302,12 +302,12 @@ export default class LibraryPublicSuffix { /// LibraryPublicSuffix Class Definit
 	/**
 	 * This method returns the PublicSuffix database from the instance with the ability to reset it inline
 	 * @name LibraryPublicSuffix.database()
-	 * @param {Array.<string>, optional} $publicSuffixData
+	 * @param {string[], optional} $publicSuffixData
 	 * @public
-	 * @returns {Array<string>}
+	 * @returns {string[]}
 	 * @static
 	 */
-	public static database($publicSuffixData?: Array<string>): Array<string> {
+	public static database($publicSuffixData?: string[]): string[] {
 		// Check for provided PublicSuffix data
 		if ($utility.lodash.isArray($publicSuffixData)) {
 			// Reset the PublicSuffix data into the instance
