@@ -57,11 +57,11 @@ export default class { /// CommonUtility Class Definition //////////////////////
 	 * @returns {Promise<string|Buffer>}
 	 * @static
 	 */
-	public static fsReadFile($path: fs.PathLike, $options?: string|{encoding?: null, flag?: string}): Promise<string|Buffer> {
+	public static fsReadFile($path: string, $options?: string|{encoding?: string|null|undefined, flag?: string|undefined}|null|undefined): Promise<string|Buffer> {
 		// Return our new Promise
-		return new Promise<string|Buffer>(($resolve, $reject) => {
+		return new Promise<string|Buffer>(($resolve, $reject): void => {
 			// Read the file
-			fs.readFile($path, $options, ($error, $data) => {
+			fs.readFile($path, $options, ($error: NodeJS.ErrnoException, $data: string|Buffer): void => {
 				// Check for an error
 				if ($error) {
 					// We're done, reject the promise
@@ -83,9 +83,9 @@ export default class { /// CommonUtility Class Definition //////////////////////
 	 */
 	public static fsStat($path: fs.PathLike): Promise<fs.Stats> {
 		// Return our new Promise
-		return new Promise<fs.Stats>(($resolve, $reject) => {
+		return new Promise<fs.Stats>(($resolve, $reject): void => {
 			// Stat the path
-			fs.stat($path, ($error, $stats) => {
+			fs.stat($path, ($error: NodeJS.ErrnoException, $stats: fs.Stats): void => {
 				// Check for an error
 				if ($error) {
 					// We're done, reject the promise
@@ -107,9 +107,9 @@ export default class { /// CommonUtility Class Definition //////////////////////
 	 */
 	public static fsUnlink($path: fs.PathLike): Promise<void> {
 		// Return our new Promise
-		return new Promise<void>(($resolve, $reject) => {
+		return new Promise<void>(($resolve, $reject): void => {
 			// Delete the file
-			fs.unlink($path, ($error) => {
+			fs.unlink($path, ($error: NodeJS.ErrnoException): void => {
 				// Check for an error
 				if ($error) {
 					// We're done, reject the promise
@@ -131,11 +131,11 @@ export default class { /// CommonUtility Class Definition //////////////////////
 	 * @returns {Promise<void>}
 	 * @static
 	 */
-	public static fsWriteFile($path: fs.PathLike, $data: any, $options?: string|{encoding?: null, mode?: string|number, flag?: string}): Promise<void> {
+	public static fsWriteFile($path: fs.PathLike, $data: any, $options?: string|{encoding?: string|null|undefined, mode?: string|number|undefined, flag?: string|undefined}|null|undefined): Promise<void> {
 		// Return our new Promise
-		return new Promise<void>(($resolve, $reject) => {
+		return new Promise<void>(($resolve, $reject): void => {
 			// Write the file
-			fs.writeFile($path, $data, $options, ($error) => {
+			fs.writeFile($path, $data, $options, ($error: NodeJS.ErrnoException): void => {
 				// Check for an error
 				if ($error) {
 					// We're done, reject the promise

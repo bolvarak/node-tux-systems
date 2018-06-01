@@ -78,9 +78,11 @@ export default class LibraryCryptography { /// Cryptography Library Module Defin
 			let $initializationVector: Buffer = Buffer.from($text.substr(0, ($ivLength * 2)), 'hex');
 			// Define our decryption
 			let $decipher: $crypto.Decipher = $crypto.createDecipheriv($algorithm, this.secret(), $initializationVector);
+			// Localize the cipher text
+			let $cipherText: string = Buffer.from($text.substr($ivLength * 2)).toString();
 			// Define our decrypted data
 			let $textPartial: Buffer = Buffer.concat([
-				$decipher.update(Buffer.from($text.substr($ivLength * 2), 'base64'), 'base64'),
+				$decipher.update($cipherText, 'base64'),
 				$decipher.final()
 			]);
 			// Reset the text
@@ -118,7 +120,7 @@ export default class LibraryCryptography { /// Cryptography Library Module Defin
 			let $cipher: $crypto.Cipher = $crypto.createCipheriv(this.algorithm(), this.secret(), $initializationVector);
 			// Encrypt our data
 			let $hashPartial: Buffer = Buffer.concat([
-				$cipher.update(Buffer.from($hash), 'base64'),
+				$cipher.update(Buffer.from($hash)),
 				$cipher.final()
 			]);
 			// Reset the hash with the hash partial

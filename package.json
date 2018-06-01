@@ -4,8 +4,11 @@
 	"version": "0.0.1",
 	"private": true,
 	"scripts": {
-		"start": "node ./Binary/Server",
-		"tsc": "tsc"
+		"start-pdns-listener": "node ./Build/Binary/PowerDNS",
+		"build": "npm run build-ts && npm run tslint",
+		"build-ts": "npm run tsc",
+		"tsc": "tsc",
+		"tslint": "tslint -c tslint.json -p tsconfig.json"
 	},
 	"dependencies": {
 		"@types/bluebird": "^3.5.20",
@@ -19,6 +22,7 @@
 		"@types/glob": "^5.0.35",
 		"@types/jsonwebtoken": "^7.2.7",
 		"@types/lodash": "^4.14.109",
+		"@types/node": "^10.3.0",
 		"@types/pg": "^7.4.9",
 		"@types/request": "^2.47.0",
 		"@types/request-promise-native": "^1.0.14",
@@ -38,9 +42,9 @@
 		"glob": "^7.1.2",
 		"jsonwebtoken": "^8.1.0",
 		"lodash": "^4.17.4",
-		"log4js": "^2.6.1",
+		"log4js": "^2.8.0",
 		"mime-types": "^2.1.18",
-		"morgan": "~1.8.1",
+		"morgan": "^1.9.0",
 		"net": "^1.0.2",
 		"nodemon": "^1.17.4",
 		"path": "^0.12.7",

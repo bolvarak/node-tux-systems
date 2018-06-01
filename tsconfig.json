@@ -1,27 +1,21 @@
 {
 	"compilerOptions": {
-		"target": "es5",
-		"module": "commonjs",
-		"lib": [
-			"es2017"
-		],
-		"checkJs": true,
-		"declaration": true,
-		"sourceMap": true,
-		"outDir": "./Build",
-		"removeComments": true,
-		"strict": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"noImplicitReturns": true,
-		"noFallthroughCasesInSwitch": true,
-		"moduleResolution": "node",
-		"baseUrl": "./Source",
-		"typeRoots": [
-			"node_modules/@types"
-		],
+		"emitDecoratorMetadata": true,
 		"esModuleInterop": true,
 		"experimentalDecorators": true,
-		"emitDecoratorMetadata": true
-	}
+		"lib": [
+			"es2018"
+		],
+		"module": "commonjs",
+		"outDir": "./Build",
+		"removeComments": true,
+		"sourceMap": true,
+		"sourceRoot": "./Source",
+		"strict": true,
+		"target": "es2018"
+	},
+	"exclude": [
+		"node_modules",
+		"./Build"
+	]
 }
